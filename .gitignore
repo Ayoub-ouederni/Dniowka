@@ -1,0 +1,12 @@
+node_modules/
+dist/
+target/
+.anchor/
+test-ledger/
+.env
+.env.*
+*.pem
+*-keypair.json
+**/id.json
+.DS_Store
+.claude/settings.local.json

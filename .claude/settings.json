@@ -1,0 +1,59 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(anchor build*)",
+      "Bash(anchor test*)",
+      "Bash(anchor deploy*)",
+      "Bash(anchor keys*)",
+      "Bash(anchor idl*)",
+      "Bash(anchor --version)",
+      "Bash(avm *)",
+      "Bash(solana --version)",
+      "Bash(solana config *)",
+      "Bash(solana balance*)",
+      "Bash(solana address*)",
+      "Bash(solana airdrop*)",
+      "Bash(solana program show*)",
+      "Bash(solana-test-validator*)",
+      "Bash(solana-verify *)",
+      "Bash(spl-token *)",
+      "Bash(cargo build*)",
+      "Bash(cargo check*)",
+      "Bash(cargo test*)",
+      "Bash(cargo clippy*)",
+      "Bash(cargo fmt*)",
+      "Bash(pnpm install*)",
+      "Bash(pnpm add*)",
+      "Bash(pnpm run *)",
+      "Bash(pnpm exec *)",
+      "Bash(pnpm -C app *)",
+      "Bash(pnpm dlx *)",
+      "Bash(nargo *)",
+      "Bash(bb *)",
+      "Bash(sunspot *)",
+      "Bash(npx tsx scripts/*)",
+      "Bash(git push origin *)"
+    ],
+    "deny": [
+      "Read(**/id.json)",
+      "Read(**/*-keypair.json)",
+      "Read(**/.config/solana/**)",
+      "Bash(solana program set-upload-authority*)",
+      "Bash(solana program deploy*--final*)",
+      "Bash(solana transfer*)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [{ "type": "command", "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/lint.sh" }]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [{ "type": "command", "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/gate.sh" }]
+      }
+    ]
+  }
+}
