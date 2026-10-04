@@ -28,10 +28,10 @@ import { UnderTheHood } from "../components/UnderTheHood";
 import { copy } from "../copy";
 import { formatDateTime, formatZl, fromWarsawInput, parseZl, toWarsawInput } from "../format";
 import { lastActionHood, useAction, useClusterNow, usePoll, useProgram } from "../hooks";
-import { readLabels, saveLabel } from "../labels";
+import { companyKey as companyKeyOf, readLabels, saveLabel } from "../labels";
 import { inviteLink } from "../route";
 
-const companyKey = (authority: PublicKey) => `dniowka:company:${authority.toBase58()}`;
+const companyKey = (authority: PublicKey) => companyKeyOf(authority.toBase58());
 
 function readCompany(authority: PublicKey): string | null {
   try {

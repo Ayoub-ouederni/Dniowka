@@ -4,7 +4,9 @@ export type Route =
   | { name: "start" }
   | { name: "employer" }
   | { name: "screen"; employer: string }
-  | { name: "salary"; stream: string; company: string | null; employee: string | null };
+  | { name: "salary"; stream: string; company: string | null; employee: string | null }
+  | { name: "labels"; params: URLSearchParams }
+  | { name: "gallery" };
 
 export function parseRoute(hash: string): Route {
   const [path, query = ""] = hash.replace(/^#/, "").split("?");
@@ -12,6 +14,8 @@ export function parseRoute(hash: string): Route {
   const parts = path.split("/").filter(Boolean);
   if (parts[0] === "employer") return { name: "employer" };
   if (parts[0] === "screen" && parts[1]) return { name: "screen", employer: parts[1] };
+  if (parts[0] === "dev" && parts[1] === "gallery") return { name: "gallery" };
+  if (parts[0] === "labels") return { name: "labels", params };
   if (parts[0] === "s" && parts[1]) {
     return {
       name: "salary",

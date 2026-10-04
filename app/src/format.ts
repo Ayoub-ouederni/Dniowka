@@ -120,3 +120,32 @@ export function couponsFilled(earned: bigint, net: bigint): number {
   const milli = Number((earned * BigInt(COUPONS) * 1000n) / net) / 1000;
   return Math.min(COUPONS, Math.max(0, milli));
 }
+
+export type FlipGroup = { digits: string; unit: "d" | "h" | "min" | "s" };
+
+/** Seconds left → digit groups for the big screen's flip clock, each with its unit. */
+export function flipDigits(seconds: number): FlipGroup[] {
+  const s = Math.max(0, Math.floor(seconds));
+  const days = Math.floor(s / 86_400);
+  const hours = Math.floor((s % 86_400) / 3_600);
+  const minutes = Math.floor((s % 3_600) / 60);
+  const secs = s % 60;
+  if (days > 0) {
+    return [
+      { digits: pad(days), unit: "d" },
+      { digits: pad(hours), unit: "h" },
+      { digits: pad(minutes), unit: "min" },
+    ];
+  }
+  if (hours > 0) {
+    return [
+      { digits: pad(hours), unit: "h" },
+      { digits: pad(minutes), unit: "min" },
+      { digits: pad(secs), unit: "s" },
+    ];
+  }
+  return [
+    { digits: pad(minutes), unit: "min" },
+    { digits: pad(secs), unit: "s" },
+  ];
+}

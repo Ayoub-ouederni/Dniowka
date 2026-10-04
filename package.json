@@ -5,7 +5,10 @@
     "smoke": "tsx scripts/smoke-devnet.ts",
     "smoke:m3": "tsx scripts/smoke-m3.ts",
     "seed": "tsx scripts/seed-zl.ts",
-    "sync-idl": "scripts/sync-idl.sh"
+    "sync-idl": "scripts/sync-idl.sh",
+    "seed:demo": "tsx scripts/seed-demo.ts",
+    "reset-demo": "tsx scripts/reset-demo.ts",
+    "test:scripts": "tsx --test scripts/lib/*.test.ts"
   },
   "dependencies": {
     "@anchor-lang/core": "^1.2.0",

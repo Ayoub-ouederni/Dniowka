@@ -7,10 +7,12 @@ import { POLL_MS, RPC_URL } from "../chain/config";
 import { type FeedEntry, FeedReader } from "../chain/feed";
 import { makeProgram } from "../chain/program";
 import { type StreamView, clusterNow, fetchEmployer, fetchStreams } from "../chain/view";
+import { FlipClock } from "../components/FlipClock";
+import { LangToggle } from "../components/LangToggle";
 import { ProofLink } from "../components/ProofLink";
 import { UnderTheHood } from "../components/UnderTheHood";
 import { copy } from "../copy";
-import { formatCountdown, formatDateTime, formatZl, toWarsawInput } from "../format";
+import { formatDateTime, formatZl, toWarsawInput } from "../format";
 import { useClusterNow, usePoll, useProgram } from "../hooks";
 import { readLabels } from "../labels";
 
@@ -114,30 +116,31 @@ export function BigScreen({ authority }: { authority: string }) {
       <section className="bs-left">
         <p className="bs-label">{copy.bigScreen.vault}</p>
         <p className="bs-total">{formatZl(data.inVaults)}</p>
+        {dueNow && <p className="bs-due">{copy.bigScreen.paydayNow}</p>}
         <p className="bs-label">
-          {dueNow
-            ? copy.bigScreen.paydayNow
-            : next
-              ? copy.bigScreen.nextPayday
-              : copy.bigScreen.noPayday}
+          {next !== null ? copy.bigScreen.nextPayday : !dueNow && copy.bigScreen.noPayday}
         </p>
-        {!dueNow && next !== null && <p className="bs-countdown">{formatCountdown(next - now)}</p>}
+        {next !== null && <FlipClock seconds={next - now} />}
       </section>
 
-      <section className="bs-receipt" aria-live="polite">
-        <h2>{copy.bigScreen.feedTitle}</h2>
-        {feed.length === 0 && <p>{copy.bigScreen.feedEmpty}</p>}
-        <ol>
-          {feed.map((e, i) => (
-            <li key={`${e.signature}-${i}`} className={`bs-line bs-${e.kind}`}>
-              <span className="bs-time">{e.time ? toWarsawInput(e.time).slice(11) : ""}</span>
-              <span className="bs-text">
-                <span>{lineText(e, who(e.stream))}</span>
-              </span>
-              <ProofLink signature={e.signature} />
-            </li>
-          ))}
-        </ol>
+      <section className="bs-printer" aria-labelledby="bs-feed-title">
+        <div className="bs-slot" aria-hidden="true" />
+        <div className="bs-receipt" aria-live="polite">
+          <p className="bs-receipt-head">{copy.bigScreen.receiptHead}</p>
+          <h2 id="bs-feed-title">{copy.bigScreen.feedTitle}</h2>
+          {feed.length === 0 && <p className="bs-waiting">{copy.bigScreen.feedEmpty}</p>}
+          <ol>
+            {feed.map((e, i) => (
+              <li key={`${e.signature}-${i}`} className={`bs-line bs-${e.kind}`}>
+                <span className="bs-time">{e.time ? toWarsawInput(e.time).slice(11) : ""}</span>
+                <span className="bs-text">
+                  <span>{lineText(e, who(e.stream))}</span>
+                </span>
+                <ProofLink signature={e.signature} />
+              </li>
+            ))}
+          </ol>
+        </div>
       </section>
 
       <footer className="bs-bottom">
@@ -146,6 +149,7 @@ export function BigScreen({ authority }: { authority: string }) {
             {i.label}
           </span>
         ))}
+        <LangToggle />
         <UnderTheHood notes={[copy.hood.feedRule]} />
       </footer>
     </main>

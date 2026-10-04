@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import { copy, type ErrorContext } from "../copy";
+import { failureSentence } from "../failure";
 import type { ActionState } from "../hooks";
 import { ProofLink } from "./ProofLink";
 import { Stamp } from "./Stamp";
@@ -16,36 +17,26 @@ export function Outcome({ state, success, context = {} }: Props) {
   if (state.phase === "idle") return null;
   if (state.phase === "pending") {
     return (
-      <div className="outcome pending">
+      <div className="outcome pending" role="status">
         <Stamp kind="confirming">{copy.common.confirming}</Stamp>
       </div>
     );
   }
   const { outcome } = state;
   if (outcome.ok) {
+    if (!success) return null;
     return (
-      <div className="outcome ok">
+      <div className="outcome ok" role="status">
         <p className="result">{success}</p>
         <ProofLink signature={outcome.signature} />
       </div>
     );
   }
   const f = outcome.failure;
-  const sentence =
-    f.kind === "program"
-      ? copy.failure.program(f.name, {
-          earned: f.earned,
-          available: f.available,
-          cancelFrom: f.cancelFrom,
-          ...context,
-        })
-      : f.kind === "unknown"
-        ? copy.failure.unknown
-        : copy.failure[f.kind];
   return (
-    <div className={f.kind === "program" ? "outcome refused" : "outcome failed"}>
+    <div className={f.kind === "program" ? "outcome refused" : "outcome failed"} role="alert">
       {f.kind === "program" && <Stamp kind="refused">{copy.stamps.refused}</Stamp>}
-      <p className="result">{sentence}</p>
+      <p className="result">{failureSentence(f, context)}</p>
       {outcome.signature && <ProofLink signature={outcome.signature} />}
     </div>
   );

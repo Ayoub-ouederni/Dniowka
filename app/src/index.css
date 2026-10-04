@@ -1,15 +1,45 @@
-/* Plain M2 styles. Palette and fonts from spec §6.2; coupons, stamps and receipts are M4. */
+/*
+ * Dniówka — Polish paper finance (spec §6.2): a ticket booklet of day-coupons, rubber stamps,
+ * till receipts. Signature: stub coupons with punched notches on a cobalt binding, and
+ * oversized Bricolage figures. Contrast pairs are checked by scripts/check-contrast.mjs.
+ */
 :root {
+  /* palette (spec) */
   --cobalt: #1b2cc1;
+  --cobalt-deep: #121d86;
   --paper: #fbfbf7;
+  --white: #ffffff;
   --ink: #111111;
-  --muted: #55554f;
-  --line: #d9d9d0;
   --yellow: #ffe45c;
   --red: #c8102e;
   --mint: #7cf2b0;
+  /* derived neutrals (ink on paper) */
+  --muted: #55554f;
+  --faint: #66665e;
+  --line: #e3e3da;
+  --line-strong: #a8a89c;
+  --note: #fff1a8;
+
+  /* type */
   --display: "Bricolage Grotesque", system-ui, sans-serif;
   --mono: "DM Mono", ui-monospace, monospace;
+
+  /* spacing: 4 px base */
+  --s1: 0.25rem;
+  --s2: 0.5rem;
+  --s3: 0.75rem;
+  --s4: 1rem;
+  --s5: 1.5rem;
+  --s6: 2rem;
+  --s8: 3rem;
+
+  /* surfaces */
+  --radius: 6px;
+  --shadow-paper: 0 1px 0 rgb(17 17 17 / 10%), 0 10px 18px -12px rgb(17 17 17 / 45%);
+  --zz: 9px; /* receipt zigzag depth */
+  --coupon-h: 44px;
+  --stub-w: 2.75rem;
+  --poll: 4s; /* one program reading: the strip glides over it */
 
   color-scheme: light;
   font: 16px/1.5 var(--mono);
@@ -22,6 +52,11 @@
   box-sizing: border-box;
 }
 
+html,
+body {
+  overflow-x: clip;
+}
+
 body {
   margin: 0;
   background: var(--paper);
@@ -29,6 +64,7 @@ body {
 
 h1,
 h2,
+h3,
 .brand,
 .big {
   font-family: var(--display);
@@ -37,46 +73,87 @@ h2,
 }
 
 h1 {
-  font-size: 2rem;
-  margin: 0.5rem 0 1rem;
+  font-size: clamp(2rem, 8vw, 2.75rem);
+  letter-spacing: -0.02em;
+  margin: 0 0 var(--s4);
 }
 
 h2 {
   font-size: 1.25rem;
-  margin: 2rem 0 0.75rem;
+  margin: var(--s6) 0 var(--s3);
 }
 
 a {
   color: var(--cobalt);
 }
 
+:focus-visible {
+  outline: 3px solid var(--cobalt);
+  outline-offset: 2px;
+}
+
+/* ------------------------------------------------------------ frame */
 .top {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 1rem;
-  padding: 0.75rem 1rem;
+  gap: var(--s3);
+  padding: var(--s2) var(--s4);
   background: var(--cobalt);
   color: var(--paper);
 }
 
+.top-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  justify-content: flex-end;
+}
+
 .brand {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   color: var(--paper);
   text-decoration: none;
   font-size: 1.4rem;
 }
 
+.lang {
+  display: inline-flex;
+  border: 1px solid currentColor;
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.lang button {
+  min-width: 44px;
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.lang button[aria-pressed="true"] {
+  background: var(--paper);
+  color: var(--cobalt);
+  font-weight: 500;
+}
+
 .screen {
   max-width: 40rem;
   margin: 0 auto;
-  padding: 1rem 1rem 3rem;
+  padding: var(--s5) var(--s4) var(--s8);
 }
 
 .foot {
   text-align: center;
   color: var(--muted);
   font-size: 0.8rem;
-  padding: 1rem;
+  padding: var(--s4);
 }
 
 .lead {
@@ -88,6 +165,14 @@ a {
   margin: 0;
 }
 
+.eyebrow {
+  margin: 0 0 var(--s1);
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
 .small,
 small {
   font-size: 0.8rem;
@@ -96,7 +181,7 @@ small {
 
 .note {
   border-left: 4px solid var(--yellow);
-  padding: 0.25rem 0.75rem;
+  padding: var(--s1) var(--s3);
 }
 
 .error {
@@ -104,7 +189,7 @@ small {
   font-weight: 500;
 }
 
-/* Buttons and inputs: touch targets ≥ 44 px (spec §6.4). */
+/* ------------------------------------------------------------ controls (≥ 44 px) */
 button,
 a.secondary,
 a.role {
@@ -120,26 +205,36 @@ a.secondary {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: var(--s2);
   padding: 0.6rem 1.1rem;
-  border-radius: 6px;
+  border-radius: var(--radius);
   border: 2px solid var(--ink);
   text-decoration: none;
   font-weight: 500;
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease;
 }
 
 button.primary {
   background: var(--ink);
   color: var(--paper);
+  box-shadow: 3px 3px 0 var(--cobalt);
+}
+
+button.primary:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--cobalt);
 }
 
 button.secondary,
 a.secondary {
-  background: transparent;
+  background: var(--white);
   color: var(--ink);
 }
 
 button.danger {
-  background: transparent;
+  background: var(--white);
   color: var(--red);
   border-color: var(--red);
 }
@@ -147,14 +242,39 @@ button.danger {
 button:disabled {
   opacity: 0.45;
   cursor: not-allowed;
+  box-shadow: none;
 }
 
 button.quiet {
   background: transparent;
   border: 1px solid currentColor;
   color: var(--paper);
-  border-radius: 6px;
+  border-radius: var(--radius);
   padding: 0.4rem 0.7rem;
+}
+
+button.quiet-dark,
+button.link {
+  background: transparent;
+  border: 0;
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  padding: 0 var(--s2);
+}
+
+button.link {
+  color: var(--cobalt);
+}
+
+.wide,
+.wide-wrap,
+.wide-wrap > button {
+  width: 100%;
+}
+
+.wide-wrap {
+  display: block;
 }
 
 form {
@@ -174,28 +294,78 @@ select {
   font: inherit;
   padding: 0.5rem 0.7rem;
   border: 2px solid var(--ink);
-  border-radius: 6px;
-  background: #fff;
+  border-radius: var(--radius);
+  background: var(--white);
   width: 100%;
 }
 
 input.invite {
   font-size: 0.75rem;
-  margin-top: 0.5rem;
+  margin-top: var(--s2);
 }
 
-/* Start */
+/* ------------------------------------------------------------ connect picker */
+dialog.picker {
+  width: min(26rem, calc(100% - 2rem));
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  padding: var(--s5);
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 6px 6px 0 var(--cobalt);
+}
+
+dialog.picker::backdrop {
+  background: rgb(17 17 17 / 55%);
+}
+
+dialog.picker h2 {
+  margin-top: 0;
+}
+
+dialog.picker ul {
+  list-style: none;
+  padding: 0;
+  margin: var(--s4) 0;
+  display: grid;
+  gap: var(--s2);
+}
+
+dialog.picker .app {
+  width: 100%;
+  justify-content: flex-start;
+  text-align: left;
+}
+
+dialog.picker .app img {
+  border-radius: 6px;
+}
+
+/* ------------------------------------------------------------ start */
 a.role,
 div.role {
   display: grid;
-  gap: 0.25rem;
-  padding: 1rem;
-  margin-bottom: 0.75rem;
+  gap: var(--s1);
+  padding: var(--s4) var(--s4) var(--s4) calc(var(--stub-w) + var(--s4));
+  margin-bottom: var(--s3);
   border: 2px solid var(--ink);
-  border-radius: 8px;
+  border-radius: var(--radius);
   color: var(--ink);
   text-decoration: none;
-  background: #fff;
+  background:
+    linear-gradient(var(--cobalt), var(--cobalt)) left / 10px 100% no-repeat,
+    var(--white);
+  position: relative;
+}
+
+a.role::after,
+div.role::after {
+  content: "";
+  position: absolute;
+  left: var(--stub-w);
+  top: 8px;
+  bottom: 8px;
+  border-left: 2px dashed var(--line-strong);
 }
 
 .role strong {
@@ -208,50 +378,77 @@ div.role.muted {
   background: transparent;
 }
 
-/* Figures */
+/* ------------------------------------------------------------ figures with dotted leaders */
+dl.leaders,
 dl.figures {
+  margin: 0;
   display: grid;
-  /* Labels take up to half the width, then wrap: a long adjustment label can't push amounts out. */
-  grid-template-columns: fit-content(50%) minmax(0, 1fr);
-  gap: 0.35rem 1rem;
-  margin: 0.75rem 0;
+  gap: var(--s2);
 }
 
+dl.leaders > div {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s2);
+}
+
+dl.figures {
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: var(--s2);
+  margin: var(--s3) 0;
+}
+
+dl.leaders dt,
 dl.figures dt {
+  flex: 1;
+  display: flex;
+  align-items: baseline;
+  min-width: 0;
   color: var(--muted);
 }
 
+dl.leaders dt::after,
+dl.figures dt::after {
+  content: "";
+  flex: 1 1 1.5rem;
+  min-width: 1.5rem;
+  margin-left: var(--s2);
+  border-bottom: 2px dotted var(--line-strong);
+  transform: translateY(-0.3em);
+}
+
+dl.leaders dd,
 dl.figures dd {
   margin: 0;
   text-align: right;
-  font-variant-numeric: tabular-nums;
-}
-
-/* Amounts never break inside; a pair like "a / b" may break at the slash. */
-dl.figures dd,
-dl.figures dd > span {
   white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
 dl.figures dd:has(> span) {
   white-space: normal;
 }
 
+dl.figures dd > span {
+  white-space: nowrap;
+}
+
+dl.leaders .strong dt {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+dl.leaders .strong dd {
+  font-weight: 500;
+  font-size: 1.15rem;
+}
+
+dl.leaders .plus dd {
+  background: linear-gradient(transparent 55%, var(--mint) 55%);
+}
+
 .row dl.figures {
   font-size: 0.875rem;
-}
-
-dl.figures.hero dd.big {
-  font-size: clamp(1.6rem, 7vw, 2.2rem);
-}
-
-.pill {
-  justify-self: end;
-  align-self: center;
-  background: var(--yellow);
-  padding: 0.1rem 0.6rem;
-  border-radius: 999px;
-  font-weight: 500;
 }
 
 .strong {
@@ -262,32 +459,784 @@ dl.figures.hero dd.big {
   font-size: 1.2rem;
 }
 
-/* Rows (employer list) */
+/* ------------------------------------------------------------ receipts (zigzag bottom) */
+.receipt-wrap {
+  filter: drop-shadow(0 1px 0 rgb(17 17 17 / 18%)) drop-shadow(0 8px 10px rgb(17 17 17 / 10%));
+  margin: var(--s4) 0;
+}
+
+.receipt {
+  background: var(--white);
+  padding: var(--s4) var(--s4) calc(var(--s4) + var(--zz));
+  mask:
+    conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom /
+      calc(var(--zz) * 2) var(--zz) repeat-x,
+    linear-gradient(#000 0 0) top / 100% calc(100% - var(--zz) + 1px) no-repeat;
+}
+
+.receipt-title {
+  margin: 0 0 var(--s3);
+  padding-bottom: var(--s2);
+  font-size: 1rem;
+  border-bottom: 2px dashed var(--ink);
+}
+
+.receipt p:last-child {
+  margin-bottom: 0;
+}
+
+.receipt .proof {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+.ticket .receipt {
+  border-top: 10px solid var(--cobalt);
+}
+
+/* ------------------------------------------------------------ stamps */
+.stamp {
+  display: inline-block;
+  padding: 0.12em 0.5em;
+  border: 0.13em solid currentColor;
+  border-radius: 0.16em;
+  box-shadow:
+    inset 0 0 0 0.06em var(--paper),
+    inset 0 0 0 0.12em currentColor;
+  font-family: var(--display);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  transform: rotate(-12deg);
+  mix-blend-mode: multiply;
+  /* worn rubber: a noise mask leaves small gaps in the ink */
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' seed='4'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -2.4 1.9'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  mask-size: 180px;
+  animation: slam 0.42s cubic-bezier(0.2, 1.5, 0.4, 1) both;
+}
+
+.stamp-refused {
+  color: var(--red);
+  font-size: clamp(2.4rem, 12vw, 3.4rem);
+}
+
+.stamp-paid {
+  color: var(--cobalt);
+  font-size: clamp(2.1rem, 10vw, 3rem);
+}
+
+.stamp-confirming {
+  color: var(--muted);
+  font-size: 1rem;
+  transform: none;
+  border-style: dashed;
+  box-shadow: none;
+  mask-image: none;
+  animation: breathe 1.2s ease-in-out infinite;
+}
+
+.late .stamp {
+  animation-delay: 1.3s;
+}
+
+@keyframes slam {
+  0% {
+    transform: rotate(-12deg) scale(2.4);
+    opacity: 0;
+  }
+  55% {
+    transform: rotate(-12deg) scale(0.92);
+    opacity: 1;
+  }
+  100% {
+    transform: rotate(-12deg) scale(1);
+  }
+}
+
+@keyframes breathe {
+  50% {
+    opacity: 0.55;
+  }
+}
+
+/* ------------------------------------------------------------ outcomes */
+.outcome {
+  margin: var(--s4) 0;
+  padding: var(--s3) var(--s4);
+  border-radius: var(--radius);
+  border: 2px solid var(--ink);
+  background: var(--white);
+}
+
+.outcome.ok {
+  background: var(--mint);
+}
+
+.outcome.refused {
+  border-color: var(--red);
+  text-align: center;
+}
+
+.outcome.pending {
+  border-style: dashed;
+  text-align: center;
+}
+
+.outcome .result {
+  font-weight: 500;
+  margin: var(--s2) 0 var(--s1);
+}
+
+.proof {
+  font-size: 0.85rem;
+}
+
+/* ------------------------------------------------------------ salary layout */
+.salary {
+  display: flex;
+  flex-direction: column;
+}
+
+.salary .area-main {
+  display: contents;
+}
+
+.salary .area-head {
+  order: 1;
+}
+
+.salary > .outcome {
+  order: 1;
+}
+
+.salary .hero {
+  order: 2;
+}
+
+.salary .area-strip {
+  order: 3;
+}
+
+.salary .take-panel {
+  order: 4;
+}
+
+.salary .area-main > * {
+  order: 5;
+}
+
+.salary .area-main > .hero {
+  order: 2;
+}
+
+.salary .area-main > .take-panel {
+  order: 4;
+}
+
+.salary .area-hood {
+  order: 6;
+}
+
+.hero-label {
+  margin: 0;
+  color: var(--muted);
+}
+
+.hero-amount {
+  margin: 0 0 var(--s3);
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: clamp(2.6rem, 14vw, 4.5rem);
+  line-height: 0.95;
+  letter-spacing: -0.035em;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.hero-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+}
+
+.hero-row p {
+  margin: 0;
+}
+
+.pill,
+.countdown {
+  display: inline-flex;
+  flex-direction: column;
+  padding: var(--s2) var(--s3);
+  border-radius: var(--radius);
+  line-height: 1.25;
+}
+
+.pill {
+  background: var(--yellow);
+  color: var(--ink);
+}
+
+.countdown {
+  background: var(--ink);
+  color: var(--yellow);
+}
+
+.pill span,
+.countdown span {
+  font-size: 0.75rem;
+}
+
+.pill strong,
+.countdown strong {
+  font-size: 1.1rem;
+  font-weight: 500;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.sticky-note {
+  position: relative;
+  display: grid;
+  gap: var(--s1);
+  max-width: 21rem;
+  margin: var(--s5) 0 var(--s2) var(--s2);
+  padding: var(--s4) var(--s4) var(--s3);
+  background: var(--note);
+  transform: rotate(-1.6deg);
+  box-shadow: var(--shadow-paper);
+}
+
+/* a piece of tape */
+.sticky-note::before {
+  content: "";
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  width: 72px;
+  height: 20px;
+  translate: -50% 0;
+  rotate: 3deg;
+  background: rgb(255 255 255 / 65%);
+  box-shadow: 0 0 0 1px rgb(17 17 17 / 6%);
+}
+
+.sticky-note span {
+  font-size: 0.8rem;
+}
+
+.sticky-note strong {
+  font-weight: 500;
+}
+
+.sticky-note strong span {
+  font-size: 1rem;
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------ the strip (booklet) */
+.strip-wrap {
+  position: relative;
+  margin: var(--s5) 0 var(--s4);
+}
+
+.strip-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--s2);
+  margin-bottom: var(--s2);
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 1.1rem;
+}
+
+.strip-head .small {
+  font-family: var(--mono);
+  font-weight: 400;
+}
+
+ol.strip {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 12px;
+  /* the booklet's cobalt binding */
+  background: linear-gradient(var(--cobalt), var(--cobalt)) left / 12px 100% no-repeat;
+  border-radius: 4px 0 0 4px;
+}
+
+.coupon {
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--stub-w) minmax(0, 1fr);
+  min-height: var(--coupon-h);
+  background: var(--white);
+  border: 1px solid var(--line-strong);
+  border-left: 0;
+  margin-top: -1px;
+}
+
+/* perforation between coupons: dotted, with a punched notch at the stub line */
+.coupon + .coupon {
+  border-top: 2px dotted var(--line-strong);
+}
+
+.coupon::before {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  top: -7px;
+  left: calc(var(--stub-w) - 6px);
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--paper);
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+}
+
+.coupon:first-child::before {
+  display: none;
+}
+
+.c-stub {
+  display: grid;
+  place-items: center;
+  font-size: 0.8rem;
+  color: var(--muted);
+  border-right: 2px dashed var(--line-strong);
+  font-variant-numeric: tabular-nums;
+}
+
+.c-body {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s2);
+  padding: 0 var(--s3);
+}
+
+.c-fill {
+  position: absolute;
+  inset: 0;
+  background: var(--yellow);
+  transform-origin: left;
+  transition: transform var(--poll) linear;
+}
+
+.c-part {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(-45deg, var(--line-strong) 0 3px, var(--white) 3px 7px);
+  opacity: 0.8;
+}
+
+.c-value,
+.c-now {
+  position: relative;
+  z-index: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.c-future .c-value {
+  color: var(--faint);
+}
+
+.c-earned .c-value,
+.c-today .c-value {
+  font-weight: 500;
+}
+
+.c-earned .c-stub {
+  color: var(--ink);
+}
+
+.c-now {
+  font-size: 0.75rem;
+  padding: 0.05rem 0.45rem;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--yellow);
+}
+
+.c-today .c-stub {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.c-off .c-body {
+  background: repeating-linear-gradient(-45deg, var(--white) 0 6px, var(--line) 6px 9px);
+}
+
+.c-off .c-value {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-style: italic;
+}
+
+/* torn off: only a jagged stub of paper is left on the binding */
+.coupon.torn {
+  min-height: 0;
+  height: 14px;
+  border: 0;
+  margin-top: 0;
+  /* what's left on the binding: a grey paper stub with a jagged edge */
+  background: #d2d2c7;
+  mask:
+    conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom / 10px 5px
+      repeat-x,
+    linear-gradient(#000 0 0) top / 100% calc(100% - 4px) no-repeat;
+}
+
+.is-paid .coupon.torn {
+  height: 8px;
+}
+
+.coupon.torn > *,
+.coupon.torn::before {
+  visibility: hidden;
+}
+
+.coupon.torn + .coupon:not(.torn) {
+  border-top: 1px solid var(--line-strong);
+}
+
+.coupon.tearing {
+  z-index: 3;
+  animation: tear 0.9s cubic-bezier(0.5, 0, 0.75, 0) both;
+}
+
+@keyframes tear {
+  0% {
+    transform: none;
+  }
+  30% {
+    transform: rotate(-3deg) translateX(6px);
+  }
+  100% {
+    transform: translate(70px, 40px) rotate(14deg);
+    opacity: 0;
+  }
+}
+
+/* payday: every coupon flies up into the total, then only stubs remain */
+.coupon.torn.fly {
+  background: var(--white);
+  height: auto;
+  min-height: var(--coupon-h);
+  mask: none;
+  animation: fly 0.8s cubic-bezier(0.55, 0, 0.8, 0.3) calc(var(--i) * 30ms) both;
+}
+
+.coupon.torn.fly > * {
+  visibility: visible;
+}
+
+.coupon.fly .c-fill {
+  transform: none !important;
+}
+
+@keyframes fly {
+  to {
+    transform: translateY(-220px) scale(0.4) rotate(-10deg);
+    opacity: 0;
+  }
+}
+
+/* tear mode */
+.picking .coupon:not(.torn) {
+  cursor: pointer;
+}
+
+/* above the yellow fill: a cobalt frame and tint on the days being torn off */
+.coupon.selected .c-body::after {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  background: rgb(27 44 193 / 10%);
+  box-shadow: inset 0 0 0 3px var(--cobalt);
+}
+
+.tear-line {
+  position: absolute;
+  z-index: 4;
+  left: -12px;
+  right: 0;
+  bottom: -2px;
+  border-top: 2px dashed var(--ink);
+  pointer-events: none;
+}
+
+.tear-line span {
+  position: absolute;
+  right: var(--s2);
+  top: -0.8rem;
+  padding: 0 var(--s2);
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 0.75rem;
+  line-height: 1.5rem;
+}
+
+/* the pile of what was taken */
+.pile {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  margin-top: var(--s4);
+  font-size: 0.85rem;
+}
+
+.pile-stack {
+  position: relative;
+  flex: none;
+  width: 64px;
+  height: 40px;
+}
+
+.pile-stack span {
+  position: absolute;
+  inset: 6px 0;
+  background: var(--yellow);
+  border: 1px solid var(--line-strong);
+}
+
+.pile-stack span:nth-child(1) {
+  rotate: -9deg;
+}
+
+.pile-stack span:nth-child(2) {
+  rotate: 5deg;
+}
+
+.pile-stack span:nth-child(3) {
+  rotate: -2deg;
+}
+
+.strip-legend {
+  margin: var(--s3) 0 0;
+}
+
+/* a stamp over the strip stays in view while the strip scrolls */
+.strip-stamp {
+  position: absolute;
+  z-index: 6;
+  inset: 2.25rem 0 0;
+  pointer-events: none;
+}
+
+.strip-stamp-inner {
+  position: sticky;
+  top: 22vh;
+  display: grid;
+  justify-items: center;
+  gap: var(--s3);
+  margin: 0 var(--s2);
+  padding: var(--s5) var(--s4) var(--s4);
+  text-align: center;
+  /* a veil so the stamp reads over the yellow coupons */
+  background: rgb(251 251 247 / 85%);
+  border-radius: var(--radius);
+}
+
+/* the tilted stamp's corners need room before the sentence under it */
+.strip-stamp-inner .stamp {
+  margin-bottom: 0.45em;
+}
+
+.strip-stamp-inner > * {
+  pointer-events: auto;
+}
+
+.stamp-reason {
+  max-width: 19rem;
+  margin: 0;
+  padding: var(--s3) var(--s4);
+  background: var(--white);
+  border: 2px solid var(--red);
+  box-shadow: var(--shadow-paper);
+  font-weight: 500;
+}
+
+.strip-stamp-inner .proof {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 var(--s3);
+  background: var(--white);
+}
+
+/* ------------------------------------------------------------ take panel */
+.take-panel {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  display: grid;
+  gap: var(--s3);
+  margin: var(--s2) calc(var(--s4) * -1) 0;
+  padding: var(--s4);
+  background: var(--paper);
+  border-top: 2px solid var(--ink);
+  box-shadow: 0 -10px 18px -14px rgb(17 17 17 / 50%);
+}
+
+.take-panel > p {
+  margin: 0;
+}
+
+.take-panel .receipt-wrap {
+  margin: 0;
+}
+
+.take-panel .outcome {
+  margin: 0;
+}
+
+.stepper {
+  display: grid;
+  grid-template-columns: 3.25rem minmax(0, 1fr) 3.25rem;
+  align-items: center;
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  background: var(--white);
+}
+
+.step {
+  min-height: 52px;
+  border: 0;
+  background: transparent;
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+.step:first-child {
+  border-right: 2px solid var(--ink);
+}
+
+.step:last-child {
+  border-left: 2px solid var(--ink);
+}
+
+.step-value {
+  text-align: center;
+  font-size: 1.35rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.tear-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.hold {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  min-height: 56px;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* progress: a mint bar that fills along the bottom while held */
+.hold::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 8px;
+  background: var(--mint);
+  transform: scaleX(var(--hold, 0));
+  transform-origin: left;
+}
+
+.hold-hint {
+  margin: calc(var(--s2) * -1) 0 0;
+  text-align: center;
+}
+
+.arrived {
+  display: grid;
+  justify-items: start;
+  gap: var(--s1);
+  padding: var(--s4);
+  border-radius: var(--radius);
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.arrived p {
+  margin: 0;
+}
+
+.arrived-amount {
+  color: var(--mint);
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: clamp(2.4rem, 12vw, 3.6rem);
+  line-height: 1;
+  white-space: nowrap;
+  animation: rise 0.5s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+
+.arrived .proof {
+  color: var(--mint);
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+@keyframes rise {
+  from {
+    transform: translateY(14px) scale(0.9);
+    opacity: 0;
+  }
+}
+
+/* ------------------------------------------------------------ employer rows */
 ul.rows {
   list-style: none;
   padding: 0;
   margin: 0;
   display: grid;
-  gap: 1rem;
+  gap: var(--s4);
 }
 
 .row {
   border: 2px solid var(--ink);
-  border-radius: 8px;
+  border-left: 10px solid var(--cobalt);
+  border-radius: var(--radius);
   padding: 0.9rem;
-  background: #fff;
+  background: var(--white);
 }
 
 .row-head {
   display: flex;
   justify-content: space-between;
-  gap: 0.5rem;
+  gap: var(--s2);
   flex-wrap: wrap;
+}
+
+.row-head strong {
+  font-family: var(--display);
+  font-size: 1.15rem;
 }
 
 .row-actions {
   display: flex;
-  gap: 0.5rem;
+  gap: var(--s2);
   flex-wrap: wrap;
 }
 
@@ -306,113 +1255,36 @@ ul.rows {
   background: var(--mint);
 }
 
-/* Strip: 30 day squares; fill comes from the program's earned figure. */
-.strip-wrap {
-  margin: 1rem 0;
+.manage {
+  display: grid;
+  gap: 1.25rem;
+  margin-top: var(--s3);
+  padding-top: var(--s3);
+  border-top: 2px dotted var(--line-strong);
 }
 
-ol.strip {
-  list-style: none;
-  padding: 0;
+.manage h3 {
   margin: 0;
-  display: grid;
-  grid-template-columns: repeat(10, 1fr);
-  gap: 4px;
+  font-size: 1.05rem;
 }
 
-.coupon {
-  aspect-ratio: 1;
-  display: grid;
-  place-items: center;
-  font-size: 0.7rem;
-  color: var(--muted);
-  border: 1px dashed var(--muted);
-  border-radius: 3px;
-  background: linear-gradient(to right, var(--yellow) var(--fill), transparent var(--fill));
+.adjustment {
+  margin: var(--s4) 0;
+  padding: var(--s4);
+  background: var(--note);
+  transform: rotate(0.8deg);
+  box-shadow: var(--shadow-paper);
 }
 
-.coupon.taken {
-  background: repeating-linear-gradient(-45deg, var(--line) 0 4px, transparent 4px 8px);
-  border-style: solid;
+.adjustment h2 {
+  margin-top: 0;
 }
 
-figcaption {
-  font-size: 0.75rem;
-  color: var(--muted);
-  margin-top: 0.4rem;
-}
-
-/* Outcomes and stamps */
-.outcome {
-  margin: 1rem 0;
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
-  border: 2px solid var(--ink);
-  background: #fff;
-}
-
-.outcome.ok {
-  background: var(--mint);
-}
-
-.outcome.refused {
-  border-color: var(--red);
-}
-
-.outcome .result {
-  font-weight: 500;
-  margin: 0 0 0.25rem;
-}
-
-.proof {
-  font-size: 0.8rem;
-}
-
-.stamp {
-  display: inline-block;
-  font-family: var(--display);
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  padding: 0.2rem 0.8rem;
-  border: 4px solid currentColor;
-  border-radius: 6px;
-  transform: rotate(-12deg);
-  margin: 0.5rem 0 0.75rem;
-}
-
-.stamp-refused {
-  color: var(--red);
-  font-size: 1.8rem;
-}
-
-.stamp-paid {
-  color: var(--cobalt);
-  font-size: 2.2rem;
-  margin: 1rem 0 1.5rem 0.75rem;
-}
-
-.stamp-confirming {
-  color: var(--muted);
-  transform: none;
-  border-style: dashed;
-}
-
-.receipt {
-  border: 2px solid var(--ink);
-  border-radius: 8px;
-  padding: 0.75rem 1rem;
-  background: #fff;
-}
-
-.take button.danger {
-  margin-top: -0.25rem;
-}
-
-/* Under the hood */
+/* ------------------------------------------------------------ under the hood */
 details.hood {
   margin-top: 2.5rem;
   border-top: 1px solid var(--line);
-  padding-top: 0.75rem;
+  padding-top: var(--s3);
   font-size: 0.8rem;
 }
 
@@ -431,7 +1303,7 @@ details.hood dl {
 
 details.hood dt {
   color: var(--muted);
-  margin-top: 0.5rem;
+  margin-top: var(--s2);
 }
 
 details.hood dd {
@@ -440,50 +1312,110 @@ details.hood dd {
 }
 
 details.hood ul {
-  padding-left: 1rem;
-  margin: 0.25rem 0;
+  padding-left: var(--s4);
+  margin: var(--s1) 0;
+}
+
+/* explorer links stay ≥ 44 px tall to tap */
+details.hood a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
 }
 
 .hood-note {
   color: var(--muted);
 }
 
-/* M3: manage panel (end employment, payday adjustment) */
-.manage {
-  display: grid;
-  gap: 1.25rem;
-  margin-top: 0.75rem;
-  padding-top: 0.75rem;
-  border-top: 1px dashed var(--line);
+/* ------------------------------------------------------------ desktop: strip left, content right */
+@media (min-width: 900px) {
+  .screen.salary {
+    max-width: 72rem;
+    display: grid;
+    grid-template-columns: 22rem minmax(0, 1fr);
+    grid-template-areas:
+      "head head"
+      "out out"
+      "strip main"
+      "strip hood";
+    grid-template-rows: auto auto auto 1fr;
+    column-gap: var(--s8);
+    align-items: start;
+    padding-top: var(--s6);
+  }
+
+  .salary .area-head {
+    grid-area: head;
+  }
+
+  .salary > .outcome {
+    grid-area: out;
+  }
+
+  .salary .area-strip {
+    grid-area: strip;
+  }
+
+  .salary .area-main {
+    grid-area: main;
+    display: flex;
+    flex-direction: column;
+    gap: var(--s4);
+    position: sticky;
+    top: var(--s4);
+    min-width: 0;
+  }
+
+  .salary .area-hood {
+    grid-area: hood;
+  }
+
+  .salary .strip-wrap {
+    margin-top: 0;
+  }
+
+  /* oversized figure, cropped by the screen edge on purpose */
+  .hero-amount {
+    font-size: clamp(5rem, 11.5vw, 10.5rem);
+  }
+
+  .sticky-note {
+    position: absolute;
+    right: 0;
+    top: -1.5rem;
+    margin: 0;
+    max-width: 17rem;
+    transform: rotate(3deg);
+  }
+
+  .hero {
+    position: relative;
+  }
+
+  .take-panel {
+    position: static;
+    margin: 0;
+    border: 2px solid var(--ink);
+    border-radius: var(--radius);
+    background: var(--white);
+    box-shadow: 6px 6px 0 var(--cobalt);
+    max-width: 30rem;
+  }
+
+  .area-details {
+    max-width: 30rem;
+  }
 }
 
-.manage h3 {
-  margin: 0;
-  font-family: var(--display);
-  font-weight: 800;
-  font-size: 1.05rem;
-}
-
-.adjustment {
-  margin-top: 1.5rem;
-  border: 2px solid var(--ink);
-  border-radius: 8px;
-  padding: 0.75rem 1rem;
-  background: var(--yellow);
-}
-
-.adjustment h2 {
-  margin-top: 0;
-}
-
-/* Big screen (projected, 1280×720) */
+/* ------------------------------------------------------------ big screen (1280×720) */
 .big-screen {
+  height: 100vh;
   min-height: 100vh;
   display: grid;
   grid-template-columns: 1.15fr 1fr;
-  grid-template-rows: 1fr auto;
-  gap: 0 2rem;
-  padding: 2rem 2.5rem 1rem;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 0 var(--s6);
+  padding: var(--s6) 2.5rem var(--s4);
   background: var(--cobalt);
   color: var(--paper);
   overflow: hidden;
@@ -505,48 +1437,147 @@ details.hood ul {
 .bs-label {
   margin: 0;
   font-size: 1.25rem;
-  opacity: 0.85;
+  opacity: 0.9;
 }
 
 .bs-total {
-  margin: 0 0 2.5rem;
+  margin: 0 0 var(--s6);
   font-family: var(--display);
   font-weight: 800;
   font-size: clamp(3rem, 8.5vw, 7.5rem);
   line-height: 1;
+  letter-spacing: -0.03em;
   white-space: nowrap;
 }
 
-.bs-countdown {
-  margin: 0.25rem 0 0;
-  display: inline-block;
+/* a payday is due: anyone can run it now */
+.bs-due {
   align-self: flex-start;
-  padding: 0.25rem 0.75rem;
-  border-radius: 6px;
+  margin: 0 0 var(--s5);
+  padding: var(--s1) var(--s3);
+  border-radius: var(--radius);
+  background: var(--yellow);
+  color: var(--ink);
+  font-size: 1.25rem;
+  font-weight: 500;
+}
+
+/* split-flap countdown */
+.flip {
+  display: flex;
+  gap: var(--s4);
+  margin-top: var(--s3);
+  perspective: 600px;
+}
+
+.flip-group {
+  display: grid;
+  justify-items: center;
+  gap: var(--s1);
+}
+
+.flip-digits {
+  display: flex;
+  gap: 6px;
+}
+
+.flip-card {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 0.78em;
+  height: 1.2em;
+  border-radius: 8px;
   background: var(--ink);
   color: var(--yellow);
-  font-size: clamp(2rem, 5vw, 4rem);
-  font-variant-numeric: tabular-nums;
+  font-size: clamp(3rem, 7vw, 5.25rem);
+  font-weight: 500;
+  line-height: 1;
+  box-shadow:
+    inset 0 -0.6em 0 rgb(255 255 255 / 4%),
+    0 6px 0 var(--cobalt-deep);
+  animation: flip 0.45s cubic-bezier(0.3, 1.4, 0.5, 1) both;
+  transform-origin: 50% 50%;
+}
+
+/* the hinge */
+.flip-card::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 2px;
+  background: var(--cobalt-deep);
+}
+
+.flip-unit {
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+
+@keyframes flip {
+  from {
+    transform: rotateX(-90deg);
+  }
+}
+
+/* the receipt printer */
+.bs-printer {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  max-height: 100%;
+}
+
+.bs-slot {
+  position: relative;
+  z-index: 2;
+  flex: none;
+  height: 18px;
+  border-radius: 9px;
+  background: var(--ink);
+  box-shadow:
+    inset 0 4px 6px rgb(0 0 0 / 70%),
+    0 2px 0 var(--cobalt-deep);
 }
 
 .bs-receipt {
-  align-self: stretch;
-  max-height: calc(100vh - 7rem);
+  min-height: 0;
+  margin: -9px var(--s4) 0;
+  padding: var(--s5) var(--s5) calc(var(--s4) + var(--zz));
   overflow: hidden;
-  padding: 1rem 1.25rem;
-  background: #fff;
+  background: var(--white);
   color: var(--ink);
-  border-radius: 4px 4px 0 0;
   font-size: 0.95rem;
-  /* Newest on top, older lines fade out like paper leaving the printer. */
-  mask-image: linear-gradient(to bottom, #000 75%, transparent);
+  mask:
+    conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom /
+      calc(var(--zz) * 2) var(--zz) repeat-x,
+    linear-gradient(#000 0 0) top / 100% calc(100% - var(--zz) + 1px) no-repeat;
+  animation: feed 0.9s ease-out both;
+}
+
+.bs-receipt-head {
+  margin: 0;
+  text-align: center;
+  letter-spacing: 0.2em;
+  font-size: 0.8rem;
+  color: var(--muted);
 }
 
 .bs-receipt h2 {
-  margin: 0 0 0.5rem;
+  margin: var(--s1) 0 var(--s2);
+  text-align: center;
   font-size: 1.1rem;
   border-bottom: 2px dashed var(--ink);
-  padding-bottom: 0.4rem;
+  padding-bottom: var(--s2);
+}
+
+.bs-waiting {
+  text-align: center;
+  color: var(--muted);
 }
 
 .bs-receipt ol {
@@ -558,14 +1589,15 @@ details.hood ul {
 .bs-line {
   display: grid;
   grid-template-columns: 5.5rem 1fr auto;
-  gap: 0.5rem;
+  gap: var(--s2);
   padding: 0.35rem 0;
-  border-bottom: 1px dotted var(--line);
+  border-bottom: 1px dotted var(--line-strong);
   animation: bs-print 0.6s ease-out;
 }
 
 .bs-time {
   color: var(--muted);
+  font-variant-numeric: tabular-nums;
 }
 
 .bs-took .bs-text > span,
@@ -585,38 +1617,42 @@ details.hood ul {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.5rem;
-  padding-top: 0.75rem;
+  gap: var(--s2);
+  padding-top: var(--s3);
 }
 
 .bs-tag {
   padding: 0.2rem 0.6rem;
-  border: 1px solid rgb(251 251 247 / 40%);
+  border: 1px dashed rgb(251 251 247 / 60%);
   border-radius: 999px;
-  opacity: 0.5;
+  opacity: 0.8;
   font-size: 0.85rem;
 }
 
 .bs-tag.on {
   opacity: 1;
-  border-color: var(--paper);
+  border: 1px solid var(--paper);
+}
+
+.bs-bottom .lang {
+  margin-left: auto;
 }
 
 .bs-bottom details.hood {
-  margin: 0 0 0 auto;
+  margin: 0;
   border: 0;
   padding: 0;
 }
 
 .bs-bottom details.hood[open] {
   position: absolute;
-  right: 1rem;
-  bottom: 3rem;
+  right: var(--s4);
+  bottom: var(--s8);
   max-width: 28rem;
-  padding: 0.75rem 1rem;
+  padding: var(--s3) var(--s4);
   background: var(--paper);
   color: var(--ink);
-  border-radius: 6px;
+  border-radius: var(--radius);
 }
 
 .bs-bottom details.hood a {
@@ -630,8 +1666,51 @@ details.hood ul {
   }
 }
 
+@keyframes feed {
+  from {
+    transform: translateY(-40px);
+    clip-path: inset(0 0 100% 0);
+  }
+}
+
+/* ------------------------------------------------------------ dev gallery */
+.gallery {
+  max-width: 72rem;
+}
+
+.gallery .take-panel {
+  position: static;
+  margin: var(--s4) 0;
+  border: 2px solid var(--ink);
+  max-width: 30rem;
+}
+
+.g-row {
+  display: grid;
+  gap: var(--s6);
+  align-items: start;
+}
+
+@media (min-width: 900px) {
+  .g-row {
+    grid-template-columns: 22rem minmax(0, 30rem);
+  }
+}
+
+.g-cobalt {
+  padding: var(--s5);
+  background: var(--cobalt);
+  color: var(--paper);
+}
+
+/* ------------------------------------------------------------ reduced motion */
 @media (prefers-reduced-motion: reduce) {
-  .bs-line {
-    animation: none;
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-delay: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
   }
 }

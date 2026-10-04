@@ -4,6 +4,7 @@ import {
   couponsFilled,
   fromWarsawInput,
   toWarsawInput,
+  flipDigits,
   formatCountdown,
   formatDate,
   formatDateTime,
@@ -82,6 +83,33 @@ describe("formatCountdown", () => {
     expect(formatCountdown(3_600)).toBe("1 h 00 min");
     expect(formatCountdown(86_399)).toBe("23 h 59 min");
     expect(formatCountdown(86_400 * 12 + 3_661)).toBe("12 d 1 h");
+  });
+});
+
+describe("flipDigits", () => {
+  it("splits a countdown into digit groups with their unit, never a clock time", () => {
+    expect(flipDigits(0)).toEqual([
+      { digits: "00", unit: "min" },
+      { digits: "00", unit: "s" },
+    ]);
+    expect(flipDigits(-4)).toEqual(flipDigits(0));
+    expect(flipDigits(18 * 60 + 5)).toEqual([
+      { digits: "18", unit: "min" },
+      { digits: "05", unit: "s" },
+    ]);
+  });
+
+  it("shows hours above an hour and days above a day", () => {
+    expect(flipDigits(3_600 + 4 * 60 + 9)).toEqual([
+      { digits: "01", unit: "h" },
+      { digits: "04", unit: "min" },
+      { digits: "09", unit: "s" },
+    ]);
+    expect(flipDigits(86_400 * 12 + 3_661)).toEqual([
+      { digits: "12", unit: "d" },
+      { digits: "01", unit: "h" },
+      { digits: "01", unit: "min" },
+    ]);
   });
 });
 
