@@ -1,0 +1,6 @@
+# Native build scripts pnpm must be allowed to run (it refuses unreviewed ones).
+allowBuilds:
+  bigint-buffer: true
+  bufferutil: true
+  esbuild: true
+  utf-8-validate: true

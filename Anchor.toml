@@ -1,0 +1,23 @@
+skip_local_validator = true
+
+[toolchain]
+package_manager = "pnpm"
+
+[features]
+resolution = true
+skip-lint = false
+
+[programs.localnet]
+dniowka = "EhUqkYYSarPPpec8x8dvgMSrKR8CWdCk11UA7iReNaV3"
+
+[programs.devnet]
+dniowka = "EhUqkYYSarPPpec8x8dvgMSrKR8CWdCk11UA7iReNaV3"
+
+[provider]
+cluster = "localnet"
+wallet = "~/.config/solana/id.json"
+
+[scripts]
+test = "cargo test"
+
+[hooks]

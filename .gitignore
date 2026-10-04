@@ -10,3 +10,6 @@ test-ledger/
 **/id.json
 .DS_Store
 .claude/settings.local.json
+**/*.rs.bk
+.yarn
+.surfpool

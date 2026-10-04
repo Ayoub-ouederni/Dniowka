@@ -1,0 +1,40 @@
+[package]
+name = "dniowka"
+version = "0.1.0"
+description = "Salary vault: earned wages withdrawable anytime, payday settles itself"
+edition.workspace = true
+rust-version.workspace = true
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "dniowka"
+
+[features]
+default = []
+cpi = ["no-entrypoint"]
+no-entrypoint = []
+no-log-ix-name = []
+idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build"]
+anchor-debug = []
+custom-heap = []
+custom-panic = []
+
+[dependencies]
+anchor-lang = { version = "1.2.0", features = ["init-if-needed"] }
+anchor-spl = { version = "1.2.0", features = ["memo"] }
+
+# LiteSVM 0.10 is the stack Anchor 1.2.0 ships and tests; it needs the SBPF v2 build
+# (ANCHOR_BUILD_SBF_ARCH=v2, set in .claude/hooks/env.sh).
+[dev-dependencies]
+litesvm = "0.10.0"
+litesvm-token = { version = "0.10.0", features = ["token-2022"] }
+solana-message = "3.0.1"
+solana-transaction = "3.0.2"
+solana-signer = "3.0.0"
+solana-keypair = "3.0.1"
+solana-instruction = "3"
+solana-transaction-error = "3"
+base64 = "0.22"
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(target_os, values("solana"))'] }

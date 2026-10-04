@@ -1,0 +1,4 @@
+# Resolve dependencies to versions whose declared rust-version fits the workspace
+# (1.89), so the organizers' dev container (older platform-tools) can still build.
+[resolver]
+incompatible-rust-versions = "fallback"
