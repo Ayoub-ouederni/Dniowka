@@ -24,15 +24,15 @@
       "Bash(cargo fmt*)",
       "Bash(pnpm install*)",
       "Bash(pnpm add*)",
-      "Bash(pnpm run *)",
-      "Bash(pnpm exec *)",
       "Bash(pnpm -C app *)",
-      "Bash(pnpm dlx *)",
       "Bash(nargo *)",
       "Bash(bb *)",
       "Bash(sunspot *)",
-      "Bash(npx tsx scripts/*)",
-      "Bash(git push origin *)"
+      "Bash(pnpm run dev)",
+      "Bash(pnpm run build)",
+      "Bash(pnpm run typecheck)",
+      "Bash(pnpm run test*)",
+      "Bash(pnpm run lint*)"
     ],
     "deny": [
       "Read(**/id.json)",
@@ -47,12 +47,22 @@
     "PostToolUse": [
       {
         "matcher": "Write|Edit",
-        "hooks": [{ "type": "command", "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/lint.sh" }]
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/lint.sh"
+          }
+        ]
       }
     ],
     "Stop": [
       {
-        "hooks": [{ "type": "command", "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/gate.sh" }]
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/gate.sh"
+          }
+        ]
       }
     ]
   }
