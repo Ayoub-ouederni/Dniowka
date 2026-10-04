@@ -62,8 +62,22 @@ async function settleOutcome(
     const logs = await failedLogs(connection, signature);
     return { ok: false, signature, failure: classifyFailure({ err: value.err, logs }) };
   } catch (e) {
-    return { ok: false, signature, failure: describe(e) };
+    const logs = isInstructionError(e) ? await failedLogs(connection, signature) : [];
+    return { ok: false, signature, failure: confirmThrown(e, logs) };
   }
+}
+
+/**
+ * When the transaction has already landed by the time we start waiting, `confirmTransaction`
+ * throws the bare transaction error (`{InstructionError: [i, {Custom: n}]}`) instead of
+ * returning it, so a fast on-chain refusal would read as "something went wrong".
+ */
+function isInstructionError(e: unknown): boolean {
+  return !!e && typeof e === "object" && "InstructionError" in e;
+}
+
+export function confirmThrown(e: unknown, logs: string[]): Failure {
+  return isInstructionError(e) ? classifyFailure({ err: e, logs }) : describe(e);
 }
 
 export async function sendNormal(
