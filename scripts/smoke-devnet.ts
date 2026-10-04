@@ -174,7 +174,10 @@ async function main() {
   over.recentBlockhash = blockhash;
   over.sign(boss, employee);
   const overSig = await connection.sendRawTransaction(over.serialize(), { skipPreflight: true });
-  await connection.confirmTransaction({ signature: overSig, blockhash, lastValidBlockHeight }, "confirmed");
+  // Some web3.js paths throw the on-chain error instead of returning it: both mean "landed".
+  await connection
+    .confirmTransaction({ signature: overSig, blockhash, lastValidBlockHeight }, "confirmed")
+    .catch(() => undefined);
   const failed = await connection.getTransaction(overSig, {
     commitment: "confirmed", maxSupportedTransactionVersion: 0,
   });

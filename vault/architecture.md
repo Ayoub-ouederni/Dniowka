@@ -25,7 +25,10 @@ M3 done 2026-10-04: propose_adjustment / accept_adjustment / cancel_unaccepted (
 in place on devnet, same ID), tests 6 and 10, end-of-employment + adjustment UI, big screen.
 M4 done 2026-10-04: polish (coupon booklet, stamps, receipts, tear/hold flow, flip clock, EN/PL,
 own connect picker), `seed:demo` / `reset-demo`. No program change, no redeploy.
-Next: M5 (Kora, Blink invite, simulated yield).
+M7 partial 2026-10-04: README + docs/design-rationale.md, app live at https://dniowka.vercel.app
+(`scripts/deploy-app.sh`, static Vercel, public devnet RPC). M5/M6 dropped for time (listed as not built in
+the README). Not done yet: verified build + `--final` (steps in `vault/m7-jour-j.md`, script
+`scripts/verify-build.sh`), backup video (`vault/m7-checklists.md`).
 
 ## M1 decisions (approved plan, 2026-10-04)
 - **Anchor 1.2.0** crates (not 1.1.2: avm would switch the machine to Solana 3.1.10).
