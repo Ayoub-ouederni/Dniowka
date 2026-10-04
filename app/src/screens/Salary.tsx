@@ -3,7 +3,8 @@ import { PublicKey } from "@solana/web3.js";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 
 import { POLL_MS } from "../chain/config";
-import { acceptStreamIx, settleIx, withdrawEarnedIx } from "../chain/program";
+import type { CutCaps } from "../chain/errors";
+import { acceptAdjustmentIx, acceptStreamIx, settleIx, withdrawEarnedIx } from "../chain/program";
 import {
   type EmployerView,
   type Settlement,
@@ -11,6 +12,7 @@ import {
   fetchEmployerAt,
   fetchSettlement,
   fetchStreamAndNow,
+  programCutCaps,
   programEarned,
   zlBalance,
 } from "../chain/view";
@@ -21,7 +23,7 @@ import { Stamp } from "../components/Stamp";
 import { Strip } from "../components/Strip";
 import { type HoodAccount, UnderTheHood } from "../components/UnderTheHood";
 import { copy } from "../copy";
-import { formatCountdown, formatZl, parseZl } from "../format";
+import { formatCountdown, formatDateTime, formatZl, parseZl } from "../format";
 import { lastActionHood, useAction, useClusterNow, usePoll, useProgram } from "../hooks";
 import { inviteLink } from "../route";
 
@@ -32,6 +34,8 @@ type Loaded = {
   employer: EmployerView;
   now: number;
   figures: { earned: bigint; available: bigint } | null;
+  /** Adjustment limits from the program, read only while an adjustment is pending. */
+  caps: CutCaps | null;
   inAccount: bigint | null;
   settlement: Settlement | null;
 };
@@ -62,8 +66,13 @@ export function Salary({ stream: address, company, employee: employeeName }: Pro
       const employer = employerCache.current ?? (await fetchEmployerAt(program, stream.employer));
       if (!employer) return null;
       employerCache.current = employer;
-      const [figures, inAccount, settlement] = await Promise.all([
+      const pendingAdjustment =
+        stream.adjustment > 0n && !stream.adjustmentAccepted && now < stream.payday;
+      const [figures, caps, inAccount, settlement] = await Promise.all([
         programEarned(program, stream, employer.authority).catch(() => null),
+        pendingAdjustment
+          ? programCutCaps(program, stream, employer.authority).catch(() => null)
+          : null,
         publicKey && stream.status !== "invited" && stream.employee.equals(publicKey)
           ? zlBalance(connection, stream.mint, publicKey)
           : null,
@@ -72,7 +81,7 @@ export function Salary({ stream: address, company, employee: employeeName }: Pro
           : null,
       ]);
       if (settlement) settlementCache.current = settlement;
-      return { stream, employer, now, figures, inAccount, settlement };
+      return { stream, employer, now, figures, caps, inAccount, settlement };
     },
     POLL_MS,
     [address, publicKey?.toBase58(), program],
@@ -140,7 +149,7 @@ export function Salary({ stream: address, company, employee: employeeName }: Pro
     <UnderTheHood
       {...lastActionHood(action.state)}
       accounts={accounts}
-      notes={[copy.hood.readRule]}
+      notes={[copy.hood.readRule, ...(stream.adjustment > 0n ? [copy.hood.capsRule] : [])]}
     />
   );
   const title = employeeName ?? copy.employer.salaryNo(stream.id);
@@ -190,6 +199,16 @@ export function Salary({ stream: address, company, employee: employeeName }: Pro
     );
   }
 
+  if (stream.status === "cancelled") {
+    return (
+      <main className="screen">
+        <h1>{copy.salary.cancelledTitle}</h1>
+        <p>{copy.salary.cancelledText}</p>
+        {hood}
+      </main>
+    );
+  }
+
   if (stream.status === "settled") {
     const s = data.settlement;
     return (
@@ -203,9 +222,17 @@ export function Salary({ stream: address, company, employee: employeeName }: Pro
               <dd>{formatZl(s.earnedFinal)}</dd>
               <dt>{copy.salary.paidTaken}</dt>
               <dd>{formatZl(stream.withdrawn)}</dd>
+              {stream.endTs !== null && (
+                <>
+                  <dt>{copy.salary.paidEnded}</dt>
+                  <dd>{formatDateTime(stream.endTs)}</dd>
+                </>
+              )}
               {s.cut > 0n && (
                 <>
-                  <dt>{copy.salary.paidCut}</dt>
+                  <dt>
+                    {copy.salary.paidCutReason(stream.adjustmentReason, stream.adjustmentAccepted)}
+                  </dt>
                   <dd>−{formatZl(s.cut)}</dd>
                 </>
               )}
@@ -230,6 +257,9 @@ export function Salary({ stream: address, company, employee: employeeName }: Pro
                 </>
               )}
             </dl>
+            {stream.adjustment > s.cut && (
+              <p className="small">{copy.salary.paidCutAsked(formatZl(stream.adjustment))}</p>
+            )}
             <ProofLink signature={s.signature} />
           </section>
         ) : (
@@ -293,6 +323,67 @@ export function Salary({ stream: address, company, employee: employeeName }: Pro
       <p className="small">{copy.salary.fromProgram}</p>
 
       <Strip earned={figures?.earned ?? 0n} withdrawn={stream.withdrawn} net={stream.net} />
+
+      {stream.endTs !== null && (
+        <p className="note">
+          {(isEmployee ? copy.salary.endsOn : copy.salary.endsOnOther)(
+            formatDateTime(stream.endTs),
+          )}
+        </p>
+      )}
+      {stream.adjustment > 0n && (
+        <section className="adjustment">
+          <h2>{copy.salary.adjustTitle}</h2>
+          <p>
+            {(isEmployee ? copy.salary.adjustProposed : copy.salary.adjustProposedOther)(
+              formatZl(stream.adjustment),
+              stream.adjustmentReason,
+            )}
+          </p>
+          {stream.adjustmentAccepted ? (
+            <p className="small">
+              {isEmployee ? copy.salary.adjustAccepted : copy.salary.adjustEmployerView(false)}
+            </p>
+          ) : (
+            <>
+              {data.caps &&
+                (stream.adjustment > data.caps.withoutConsent ? (
+                  <p className="small">
+                    {(isEmployee ? copy.salary.adjustAlone : copy.salary.adjustAloneOther)(
+                      formatZl(data.caps.withoutConsent),
+                    )}
+                  </p>
+                ) : (
+                  <p className="small">{copy.salary.adjustWithinFloor}</p>
+                ))}
+              {isEmployee && publicKey && !paydayCome ? (
+                <button
+                  className="primary"
+                  disabled={action.state.phase === "pending"}
+                  onClick={async () => {
+                    const outcome = await action.run("accept_adjustment", async () => [
+                      await acceptAdjustmentIx(
+                        program,
+                        publicKey,
+                        stream.address,
+                        stream.adjustment,
+                      ),
+                    ]);
+                    if (outcome.ok) reload();
+                  }}
+                >
+                  {copy.salary.adjustAccept(formatZl(stream.adjustment))}
+                </button>
+              ) : (
+                !isEmployee && <p className="small">{copy.salary.adjustEmployerView(true)}</p>
+              )}
+            </>
+          )}
+          {action.state.phase !== "idle" && action.state.instruction === "accept_adjustment" && (
+            <Outcome state={action.state} success={copy.salary.adjustAcceptedNow} />
+          )}
+        </section>
+      )}
 
       {paydayCome ? (
         <section>

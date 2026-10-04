@@ -51,6 +51,19 @@ pub struct Stream {
     pub vault_bump: u8,
 }
 
+impl Stream {
+    /// Wages earned by the end of employment (or of the period): what payday settles.
+    pub fn earned_final(&self) -> Result<u64> {
+        crate::math::earned(
+            self.net_amount,
+            self.period_start,
+            self.period_end,
+            self.end_ts,
+            self.period_end,
+        )
+    }
+}
+
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq, Debug, InitSpace)]
 pub enum StreamStatus {
     Invited,

@@ -33,7 +33,12 @@ export function Outcome({ state, success, context = {} }: Props) {
   const f = outcome.failure;
   const sentence =
     f.kind === "program"
-      ? copy.failure.program(f.name, { earned: f.earned, available: f.available, ...context })
+      ? copy.failure.program(f.name, {
+          earned: f.earned,
+          available: f.available,
+          cancelFrom: f.cancelFrom,
+          ...context,
+        })
       : f.kind === "unknown"
         ? copy.failure.unknown
         : copy.failure[f.kind];

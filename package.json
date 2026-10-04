@@ -3,6 +3,7 @@
   "private": true,
   "scripts": {
     "smoke": "tsx scripts/smoke-devnet.ts",
+    "smoke:m3": "tsx scripts/smoke-m3.ts",
     "seed": "tsx scripts/seed-zl.ts",
     "sync-idl": "scripts/sync-idl.sh"
   },

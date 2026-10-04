@@ -63,3 +63,30 @@ pub struct WageShortfall {
     pub employee: Pubkey,
     pub shortfall: u64,
 }
+
+#[event]
+pub struct AdjustmentProposed {
+    pub stream: Pubkey,
+    pub amount: u64,
+    pub reason: u8,
+    /// Most that applies without the employee's consent (down to the floor).
+    pub cap_without_consent: u64,
+    /// Most that applies with consent (down to what was already taken).
+    pub cap_with_consent: u64,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct AdjustmentAccepted {
+    pub stream: Pubkey,
+    pub employee: Pubkey,
+    pub amount: u64,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct StreamCancelled {
+    pub stream: Pubkey,
+    pub refund_emp: u64,
+    pub timestamp: i64,
+}

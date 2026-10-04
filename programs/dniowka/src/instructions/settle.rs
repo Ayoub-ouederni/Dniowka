@@ -71,13 +71,7 @@ pub fn handle_settle(ctx: Context<Settle>) -> Result<()> {
     require!(now >= stream.payday, DniowkaError::TooEarlyForPayday);
 
     // Earned up to min(end_ts, period_end).
-    let earned_final = math::earned(
-        stream.net_amount,
-        stream.period_start,
-        stream.period_end,
-        stream.end_ts,
-        stream.period_end,
-    )?;
+    let earned_final = stream.earned_final()?;
     let split = math::settle_split(
         earned_final,
         stream.floor_bps,

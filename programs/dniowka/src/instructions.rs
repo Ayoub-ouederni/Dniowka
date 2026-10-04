@@ -1,15 +1,21 @@
+pub mod accept_adjustment;
 pub mod accept_stream;
+pub mod cancel_unaccepted;
 pub mod create_stream;
 pub mod end_employment;
 pub mod fund_stream;
 pub mod init_employer;
+pub mod propose_adjustment;
 pub mod settle;
 pub mod withdraw_earned;
 
+pub use accept_adjustment::*;
 pub use accept_stream::*;
+pub use cancel_unaccepted::*;
 pub use create_stream::*;
 pub use end_employment::*;
 pub use fund_stream::*;
 pub use init_employer::*;
+pub use propose_adjustment::*;
 pub use settle::*;
 pub use withdraw_earned::*;

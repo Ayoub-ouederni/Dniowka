@@ -21,7 +21,9 @@ M1 done 2026-10-04: program on devnet, `EhUqkYYSarPPpec8x8dvgMSrKR8CWdCk11UA7iRe
 (upgradeable, authority = dev wallet).
 M2 done 2026-10-04: minimal UI in `app/` (employer register / add / secure; employee join /
 take / try anyway; payday by anyone; proof links; Under the hood). No program change.
-Next: M3 (adjustments, end of employment, big screen).
+M3 done 2026-10-04: propose_adjustment / accept_adjustment / cancel_unaccepted (program upgraded
+in place on devnet, same ID), tests 6 and 10, end-of-employment + adjustment UI, big screen.
+Next: M4 (polish).
 
 ## M1 decisions (approved plan, 2026-10-04)
 - **Anchor 1.2.0** crates (not 1.1.2: avm would switch the machine to Solana 3.1.10).
@@ -71,23 +73,53 @@ Next: M3 (adjustments, end of employment, big screen).
 - **Phone:** `pnpm -C app dev:https` (self-signed, `@vitejs/plugin-basic-ssl`) because Android
   MWA needs a secure context; `pnpm -C app dev` (HTTP) for the laptop.
 
+## M3 decisions (approved plan, 2026-10-04)
+- **`accept_adjustment(amount)`** (beyond the spec's no-arg form): the employee consents to the exact
+  amount they reviewed; `AdjustmentChanged` if the employer swapped the proposal meanwhile.
+  `propose_adjustment` always resets `adjustment_accepted` (fixes the M2 limitation).
+- **`propose_adjustment`**: Active, `now < payday`, reason 1..=4, `0 < amount ≤ earned_final − withdrawn`.
+  The no-consent cap (`earned_final − max(floor, withdrawn)`) is applied by `settle`, not refused.
+  Logs `cut cap X with consent Y` before its checks; the app reads it by simulating an impossible
+  proposal (same approach as M2's `earned X available Y`). Shared math: `math::cut_caps`,
+  `Stream::earned_final`.
+- **`cancel_unaccepted`** in M3: Invited only, grace = period length / 10 (3 days of a 30-day month,
+  30 s of a 5-min demo). Refunds `funded` (memo first, like settle); status Cancelled. Logs
+  `cancel allowed from T` so a too-early refusal can say when.
+- **Errors 6022–6027** appended: InvalidAdjustmentReason, AdjustmentTooLarge, AdjustmentClosed,
+  NoAdjustment, AdjustmentChanged, CancelTooEarly. Events: AdjustmentProposed, AdjustmentAccepted,
+  StreamCancelled.
+- **End-of-employment picker**: `datetime-local` read as Europe/Warsaw wall time (`format.ts`),
+  min = cluster now, max = period end. A past date disables the normal button and offers
+  "Try anyway" (signed, sent without preflight) so the program refuses it on-chain.
+- **Big screen** `#/screen/<employer wallet>`: no header/footer. Vault total = real vault token
+  balances; countdown = nearest payday (cluster clock). Receipt = program events + on-chain refusals
+  of the last 25 program transactions (`chain/feed.ts`), read ≤ 6 new tx per 8 s on a separate
+  connection with `disableRetryOnRateLimit` (public devnet 429s otherwise blanked the screen).
+  Names come from the employer's localStorage labels; else "Employee #id". QR → M6, flip clock → M4.
+- **Devnet evidence script**: `pnpm run smoke:m3` (dev wallet = employer + fee payer, fresh 0-SOL
+  employee and payday caller; `PAUSE=45` holds with a pending adjustment to look at the app).
+
 ## Known limitations (README later)
 - A funded open invite can be claimed by whoever accepts first; seed/demo use hinted invites.
-- Until `cancel_unaccepted` (instruction 10, no milestone yet; suggest M3) exists, funding of a
-  stream nobody accepts stays locked.
+- After accepting a large adjustment the employee can still withdraw up to the floor; settle then
+  caps the cut at `earned_final − withdrawn`, so the employer may recover less than agreed.
+- An adjustment's caps are computed against the current end date; moving the end date later grows
+  them. Tokens sent straight to a vault are not part of `funded` and stay there on cancel too.
 - Earned counts from `period_start`, not from acceptance. Moving an end date later after it
   passed pays the gap. Funding closes at payday, so a shortfall can't be cured on-chain after.
 - Vault rent and tokens sent to a vault directly stay there.
 - M2 UI: every actor pays devnet SOL fees (and the employee's zł account rent) until Kora (M5).
   Devnet airdrops are often rate-limited; fund demo wallets from faucet.solana.com ahead of time.
 - M2 UI: nobody runs payday automatically yet; any visitor can press "Run payday" once it's due.
-- M3: `propose_adjustment` must reset `adjustment_accepted`. M6: the stored commitment is a
+- Every screen polls the public devnet RPC; several open tabs plus a script can hit 429s.
+- M6: the stored commitment is a
   placeholder; bind the leaf to the stream's real `net_amount` before writing the circuit.
 
 ## How to run
-- `source .claude/hooks/env.sh && anchor test` (10 unit + 17 LiteSVM tests).
-- `pnpm install && pnpm run smoke` — real-time devnet run with Explorer links.
-- App: `pnpm -C app dev` (laptop, http://localhost:5173) or `pnpm -C app dev:https` (phone on
+- `source .claude/hooks/env.sh && anchor test` (11 unit + 23 LiteSVM tests).
+- `pnpm install && pnpm run smoke` — real-time devnet run with Explorer links; `pnpm run smoke:m3`
+  for adjustments, end of employment, cancel and the on-chain refusals.
+- App: `VITE_DEV_BURNER=1 pnpm -C app dev --port 5180` (5173 is taken on this laptop) or `pnpm -C app dev:https` (phone on
   the LAN). Checks: `pnpm -C app typecheck`, `pnpm -C app test`, `pnpm -C app lint`.
 - Test zł for an employer: `pnpm run seed -- <wallet address> [zł]`.
 - After `anchor build`: `pnpm run sync-idl`.

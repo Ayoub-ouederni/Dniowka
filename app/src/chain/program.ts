@@ -186,3 +186,67 @@ export function settleIx(
     })
     .instruction();
 }
+
+export function endEmploymentIx(
+  program: DniowkaProgram,
+  authority: PublicKey,
+  stream: PublicKey,
+  endTs: number,
+): Promise<TransactionInstruction> {
+  return program.methods
+    .endEmployment(bn(endTs))
+    .accountsPartial({ authority, employer: employerPda(authority), stream })
+    .instruction();
+}
+
+/** Reason codes as the program stores them. */
+export const ADJUSTMENT_REASONS = [1, 2, 3, 4] as const;
+
+export function proposeAdjustmentIx(
+  program: DniowkaProgram,
+  authority: PublicKey,
+  stream: PublicKey,
+  amount: bigint,
+  reason: number,
+): Promise<TransactionInstruction> {
+  return program.methods
+    .proposeAdjustment(bn(amount), reason)
+    .accountsPartial({ authority, employer: employerPda(authority), stream })
+    .instruction();
+}
+
+/** `amount` is the adjustment the employee reviewed; the program refuses if it changed. */
+export function acceptAdjustmentIx(
+  program: DniowkaProgram,
+  employee: PublicKey,
+  stream: PublicKey,
+  amount: bigint,
+): Promise<TransactionInstruction> {
+  return program.methods
+    .acceptAdjustment(bn(amount))
+    .accountsPartial({ employee, stream })
+    .instruction();
+}
+
+export function cancelUnacceptedIx(
+  program: DniowkaProgram,
+  authority: PublicKey,
+  stream: PublicKey,
+  mint: PublicKey,
+): Promise<TransactionInstruction> {
+  return program.methods
+    .cancelUnaccepted()
+    .accountsPartial({
+      authority,
+      employer: employerPda(authority),
+      stream,
+      vault: vaultPda(stream),
+      mint,
+      employerToken: zlAccount(mint, authority),
+      tokenProgram: TOKEN_2022_PROGRAM_ID,
+      associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+      memoProgram: MEMO_PROGRAM_ID,
+      systemProgram: SystemProgram.programId,
+    })
+    .instruction();
+}

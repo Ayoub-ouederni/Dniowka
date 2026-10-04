@@ -7,7 +7,13 @@ import idl from "./idl/dniowka.json";
 export type ProgramError = { code: number; name: string };
 
 export type Failure =
-  | ({ kind: "program"; earned?: bigint; available?: bigint } & ProgramError)
+  | ({
+      kind: "program";
+      earned?: bigint;
+      available?: bigint;
+      /** CancelTooEarly: when cancelling becomes allowed (program log). */
+      cancelFrom?: number;
+    } & ProgramError)
   | { kind: "cancelled" }
   | { kind: "noFees" }
   | { kind: "network" }
@@ -23,6 +29,8 @@ export function errorName(code: number): string | null {
 type Logs = readonly string[] | null | undefined;
 
 const EARNED_LINE = /Program log: earned (\d+) available (\d+)/;
+const CUT_CAP_LINE = /Program log: cut cap (\d+) with consent (\d+)/;
+const CANCEL_FROM_LINE = /Program log: cancel allowed from (-?\d+)/;
 const ANCHOR_ERROR = /Error Code: (\w+)\. Error Number: (\d+)\./;
 
 /** The `earned X available Y` line that `withdraw_earned` logs before checking the amount. */
@@ -30,6 +38,26 @@ export function parseEarnedAvailable(logs: Logs): { earned: bigint; available: b
   for (const line of logs ?? []) {
     const m = EARNED_LINE.exec(line);
     if (m) return { earned: BigInt(m[1]), available: BigInt(m[2]) };
+  }
+  return null;
+}
+
+export type CutCaps = { withoutConsent: bigint; withConsent: bigint };
+
+/** The `cut cap X with consent Y` line that `propose_adjustment` logs before its checks. */
+export function parseCutCaps(logs: Logs): CutCaps | null {
+  for (const line of logs ?? []) {
+    const m = CUT_CAP_LINE.exec(line);
+    if (m) return { withoutConsent: BigInt(m[1]), withConsent: BigInt(m[2]) };
+  }
+  return null;
+}
+
+/** The `cancel allowed from T` line that `cancel_unaccepted` logs before its checks. */
+export function parseCancelFrom(logs: Logs): number | null {
+  for (const line of logs ?? []) {
+    const m = CANCEL_FROM_LINE.exec(line);
+    if (m) return Number(m[1]);
   }
   return null;
 }
@@ -69,7 +97,13 @@ export function classifyFailure(e: unknown, extraLogs?: Logs): Failure {
   const program = parseProgramError(logs, err);
   if (program) {
     const numbers = parseEarnedAvailable(logs);
-    return { kind: "program", ...program, ...(numbers ?? {}) };
+    const cancelFrom = parseCancelFrom(logs);
+    return {
+      kind: "program",
+      ...program,
+      ...(numbers ?? {}),
+      ...(cancelFrom !== null ? { cancelFrom } : {}),
+    };
   }
 
   const message =

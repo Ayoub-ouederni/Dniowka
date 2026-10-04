@@ -211,7 +211,8 @@ div.role.muted {
 /* Figures */
 dl.figures {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  /* Labels take up to half the width, then wrap: a long adjustment label can't push amounts out. */
+  grid-template-columns: fit-content(50%) minmax(0, 1fr);
   gap: 0.35rem 1rem;
   margin: 0.75rem 0;
 }
@@ -445,4 +446,192 @@ details.hood ul {
 
 .hood-note {
   color: var(--muted);
+}
+
+/* M3: manage panel (end employment, payday adjustment) */
+.manage {
+  display: grid;
+  gap: 1.25rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed var(--line);
+}
+
+.manage h3 {
+  margin: 0;
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 1.05rem;
+}
+
+.adjustment {
+  margin-top: 1.5rem;
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  background: var(--yellow);
+}
+
+.adjustment h2 {
+  margin-top: 0;
+}
+
+/* Big screen (projected, 1280×720) */
+.big-screen {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  grid-template-rows: 1fr auto;
+  gap: 0 2rem;
+  padding: 2rem 2.5rem 1rem;
+  background: var(--cobalt);
+  color: var(--paper);
+  overflow: hidden;
+}
+
+.bs-empty {
+  grid-column: 1 / -1;
+  align-self: center;
+  font-size: 1.5rem;
+}
+
+.bs-left {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+
+.bs-label {
+  margin: 0;
+  font-size: 1.25rem;
+  opacity: 0.85;
+}
+
+.bs-total {
+  margin: 0 0 2.5rem;
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: clamp(3rem, 8.5vw, 7.5rem);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.bs-countdown {
+  margin: 0.25rem 0 0;
+  display: inline-block;
+  align-self: flex-start;
+  padding: 0.25rem 0.75rem;
+  border-radius: 6px;
+  background: var(--ink);
+  color: var(--yellow);
+  font-size: clamp(2rem, 5vw, 4rem);
+  font-variant-numeric: tabular-nums;
+}
+
+.bs-receipt {
+  align-self: stretch;
+  max-height: calc(100vh - 7rem);
+  overflow: hidden;
+  padding: 1rem 1.25rem;
+  background: #fff;
+  color: var(--ink);
+  border-radius: 4px 4px 0 0;
+  font-size: 0.95rem;
+  /* Newest on top, older lines fade out like paper leaving the printer. */
+  mask-image: linear-gradient(to bottom, #000 75%, transparent);
+}
+
+.bs-receipt h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.1rem;
+  border-bottom: 2px dashed var(--ink);
+  padding-bottom: 0.4rem;
+}
+
+.bs-receipt ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.bs-line {
+  display: grid;
+  grid-template-columns: 5.5rem 1fr auto;
+  gap: 0.5rem;
+  padding: 0.35rem 0;
+  border-bottom: 1px dotted var(--line);
+  animation: bs-print 0.6s ease-out;
+}
+
+.bs-time {
+  color: var(--muted);
+}
+
+.bs-took .bs-text > span,
+.bs-paid .bs-text > span {
+  background: linear-gradient(transparent 55%, var(--mint) 55%);
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+.bs-refused .bs-text {
+  color: var(--red);
+  font-weight: 500;
+}
+
+.bs-bottom {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding-top: 0.75rem;
+}
+
+.bs-tag {
+  padding: 0.2rem 0.6rem;
+  border: 1px solid rgb(251 251 247 / 40%);
+  border-radius: 999px;
+  opacity: 0.5;
+  font-size: 0.85rem;
+}
+
+.bs-tag.on {
+  opacity: 1;
+  border-color: var(--paper);
+}
+
+.bs-bottom details.hood {
+  margin: 0 0 0 auto;
+  border: 0;
+  padding: 0;
+}
+
+.bs-bottom details.hood[open] {
+  position: absolute;
+  right: 1rem;
+  bottom: 3rem;
+  max-width: 28rem;
+  padding: 0.75rem 1rem;
+  background: var(--paper);
+  color: var(--ink);
+  border-radius: 6px;
+}
+
+.bs-bottom details.hood a {
+  color: inherit;
+}
+
+@keyframes bs-print {
+  from {
+    transform: translateY(-0.6rem);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bs-line {
+    animation: none;
+  }
 }

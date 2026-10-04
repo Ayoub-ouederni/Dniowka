@@ -8,6 +8,38 @@
   },
   "instructions": [
     {
+      "name": "accept_adjustment",
+      "docs": [
+        "The employee consents to exactly the adjustment they reviewed."
+      ],
+      "discriminator": [
+        13,
+        224,
+        98,
+        47,
+        168,
+        134,
+        195,
+        128
+      ],
+      "accounts": [
+        {
+          "name": "employee",
+          "signer": true
+        },
+        {
+          "name": "stream",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
       "name": "accept_stream",
       "docs": [
         "The employee joins; from now on only they can withdraw."
@@ -49,6 +81,131 @@
           }
         }
       ]
+    },
+    {
+      "name": "cancel_unaccepted",
+      "docs": [
+        "The employer takes back the funding of an invite nobody accepted."
+      ],
+      "discriminator": [
+        165,
+        153,
+        32,
+        101,
+        199,
+        134,
+        68,
+        50
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "docs": [
+            "The employer; also pays rent if their refund account does not exist."
+          ],
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "employer"
+          ]
+        },
+        {
+          "name": "employer",
+          "relations": [
+            "stream"
+          ]
+        },
+        {
+          "name": "stream",
+          "writable": true
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "relations": [
+            "stream"
+          ]
+        },
+        {
+          "name": "mint",
+          "relations": [
+            "stream"
+          ]
+        },
+        {
+          "name": "employer_token",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "authority"
+              },
+              {
+                "kind": "account",
+                "path": "token_program"
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "token_program"
+        },
+        {
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "memo_program",
+          "address": "MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
     },
     {
       "name": "create_stream",
@@ -345,6 +502,52 @@
         {
           "name": "default_floor_bps",
           "type": "u16"
+        }
+      ]
+    },
+    {
+      "name": "propose_adjustment",
+      "docs": [
+        "The employer proposes a reduction of the final pay (sick leave, absence, correction).",
+        "Without the employee's consent it can never cut below the floor."
+      ],
+      "discriminator": [
+        90,
+        186,
+        188,
+        58,
+        49,
+        89,
+        216,
+        219
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "signer": true,
+          "relations": [
+            "employer"
+          ]
+        },
+        {
+          "name": "employer",
+          "relations": [
+            "stream"
+          ]
+        },
+        {
+          "name": "stream",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        },
+        {
+          "name": "reason",
+          "type": "u8"
         }
       ]
     },
@@ -685,6 +888,32 @@
   ],
   "events": [
     {
+      "name": "AdjustmentAccepted",
+      "discriminator": [
+        96,
+        155,
+        252,
+        39,
+        244,
+        248,
+        154,
+        70
+      ]
+    },
+    {
+      "name": "AdjustmentProposed",
+      "discriminator": [
+        179,
+        246,
+        172,
+        117,
+        138,
+        151,
+        81,
+        38
+      ]
+    },
+    {
       "name": "EmploymentEnded",
       "discriminator": [
         130,
@@ -734,6 +963,19 @@
         126,
         10,
         140
+      ]
+    },
+    {
+      "name": "StreamCancelled",
+      "discriminator": [
+        91,
+        215,
+        29,
+        237,
+        194,
+        6,
+        184,
+        92
       ]
     },
     {
@@ -886,9 +1128,101 @@
       "code": 6021,
       "name": "EmployerCannotBeEmployee",
       "msg": "An employer can't be their own employee"
+    },
+    {
+      "code": 6022,
+      "name": "InvalidAdjustmentReason",
+      "msg": "Adjustment reason must be 1 (sick leave), 2 (unpaid absence), 3 (correction) or 4 (other)"
+    },
+    {
+      "code": 6023,
+      "name": "AdjustmentTooLarge",
+      "msg": "Adjustment would cut into pay that was already taken"
+    },
+    {
+      "code": 6024,
+      "name": "AdjustmentClosed",
+      "msg": "Adjustments close at payday"
+    },
+    {
+      "code": 6025,
+      "name": "NoAdjustment",
+      "msg": "There is no adjustment to accept"
+    },
+    {
+      "code": 6026,
+      "name": "AdjustmentChanged",
+      "msg": "The adjustment changed; review it again"
+    },
+    {
+      "code": 6027,
+      "name": "CancelTooEarly",
+      "msg": "This invite can't be cancelled yet"
     }
   ],
   "types": [
+    {
+      "name": "AdjustmentAccepted",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "stream",
+            "type": "pubkey"
+          },
+          {
+            "name": "employee",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "AdjustmentProposed",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "stream",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          },
+          {
+            "name": "reason",
+            "type": "u8"
+          },
+          {
+            "name": "cap_without_consent",
+            "docs": [
+              "Most that applies without the employee's consent (down to the floor)."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "cap_with_consent",
+            "docs": [
+              "Most that applies with consent (down to what was already taken)."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    },
     {
       "name": "Employer",
       "docs": [
@@ -1148,6 +1482,26 @@
           {
             "name": "employee",
             "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "StreamCancelled",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "stream",
+            "type": "pubkey"
+          },
+          {
+            "name": "refund_emp",
+            "type": "u64"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
           }
         ]
       }

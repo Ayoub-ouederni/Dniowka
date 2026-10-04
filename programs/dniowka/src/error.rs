@@ -48,4 +48,18 @@ pub enum DniowkaError {
     UnsupportedMint,
     #[msg("An employer can't be their own employee")]
     EmployerCannotBeEmployee,
+    #[msg(
+        "Adjustment reason must be 1 (sick leave), 2 (unpaid absence), 3 (correction) or 4 (other)"
+    )]
+    InvalidAdjustmentReason,
+    #[msg("Adjustment would cut into pay that was already taken")]
+    AdjustmentTooLarge,
+    #[msg("Adjustments close at payday")]
+    AdjustmentClosed,
+    #[msg("There is no adjustment to accept")]
+    NoAdjustment,
+    #[msg("The adjustment changed; review it again")]
+    AdjustmentChanged,
+    #[msg("This invite can't be cancelled yet")]
+    CancelTooEarly,
 }

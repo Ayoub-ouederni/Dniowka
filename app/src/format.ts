@@ -54,6 +54,53 @@ export function formatDateTime(unixSeconds: number): string {
 
 const pad = (n: number) => n.toString().padStart(2, "0");
 
+/** Warsaw wall time of a moment, as calendar fields (seconds included). */
+function warsawFields(unixSeconds: number) {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: TIME_ZONE,
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+    hour: "numeric",
+    minute: "numeric",
+    second: "numeric",
+    hourCycle: "h23",
+  }).formatToParts(new Date(unixSeconds * 1000));
+  const get = (type: Intl.DateTimeFormatPartTypes) =>
+    Number(parts.find((p) => p.type === type)?.value ?? "0");
+  return {
+    y: get("year"),
+    m: get("month"),
+    d: get("day"),
+    h: get("hour"),
+    min: get("minute"),
+    s: get("second"),
+  };
+}
+
+/** A moment → `2026-12-02T11:05:30`, the Polish wall time for a date-time picker. */
+export function toWarsawInput(unixSeconds: number): string {
+  const f = warsawFields(unixSeconds);
+  return `${f.y}-${pad(f.m)}-${pad(f.d)}T${pad(f.h)}:${pad(f.min)}:${pad(f.s)}`;
+}
+
+/** A date-time picker value, read as Polish wall time → unix seconds (null if invalid). */
+export function fromWarsawInput(value: string): number | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/.exec(value);
+  if (!m) return null;
+  const [y, mo, d, h, min, s] = m.slice(1).map((v) => Number(v ?? "0"));
+  if (mo < 1 || mo > 12 || d < 1 || d > 31 || h > 23 || min > 59 || s > 59) return null;
+  const asUtc = Date.UTC(y, mo - 1, d, h, min, s) / 1000;
+  // Shift by Warsaw's offset at that moment; a second pass settles DST edges.
+  let guess = asUtc;
+  for (let i = 0; i < 2; i++) {
+    const f = warsawFields(guess);
+    const shown = Date.UTC(f.y, f.m - 1, f.d, f.h, f.min, f.s) / 1000;
+    guess += asUtc - shown;
+  }
+  return guess;
+}
+
 /** Seconds left → `42 s`, `6 min 05 s`, `1 h 04 min` or `12 d 1 h` (never like a clock time). */
 export function formatCountdown(seconds: number): string {
   const s = Math.max(0, Math.floor(seconds));

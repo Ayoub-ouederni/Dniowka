@@ -39,6 +39,24 @@ pub fn available(earned: u64, floor_bps: u16, funded: u64, withdrawn: u64) -> Re
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct CutCaps {
+    /// Most a payday adjustment can cut without the employee's consent.
+    pub without_consent: u64,
+    /// Most it can cut with their consent.
+    pub with_consent: u64,
+}
+
+/// Without the employee's consent a cut can never reach below the floor;
+/// with it, never below what was already withdrawn.
+pub fn cut_caps(earned_final: u64, floor_bps: u16, withdrawn: u64) -> Result<CutCaps> {
+    let floor_final = floor_of(earned_final, floor_bps)?;
+    Ok(CutCaps {
+        without_consent: earned_final.saturating_sub(floor_final.max(withdrawn)),
+        with_consent: earned_final.saturating_sub(withdrawn),
+    })
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SettleSplit {
     pub cut: u64,
     pub owed: u64,
@@ -56,13 +74,11 @@ pub fn settle_split(
     adjustment: u64,
     adjustment_accepted: bool,
 ) -> Result<SettleSplit> {
-    let floor_final = floor_of(earned_final, floor_bps)?;
-    // Without the employee's consent a cut can never reach below the floor;
-    // with it, never below what was already withdrawn.
+    let caps = cut_caps(earned_final, floor_bps, withdrawn)?;
     let max_cut = if adjustment_accepted {
-        earned_final.saturating_sub(withdrawn)
+        caps.with_consent
     } else {
-        earned_final.saturating_sub(floor_final.max(withdrawn))
+        caps.without_consent
     };
     let cut = adjustment.min(max_cut);
     let owed = earned_final - cut; // cut <= max_cut <= earned_final
@@ -200,6 +216,18 @@ mod tests {
         assert_eq!(s.owed, 300_000);
         assert_eq!(s.pay_employee, 220_000);
         assert_eq!(s.refund_emp, 300_000);
+    }
+
+    #[test]
+    fn cut_caps_follow_the_floor_and_withdrawals() {
+        let caps = cut_caps(NET, 7000, 80_000).unwrap();
+        assert_eq!(
+            (caps.without_consent, caps.with_consent),
+            (180_000, 520_000)
+        );
+        // Taken more than the floor (possible only after an end date moved): never below taken.
+        let caps = cut_caps(300_000, 7000, 250_000).unwrap();
+        assert_eq!((caps.without_consent, caps.with_consent), (50_000, 50_000));
     }
 
     #[test]

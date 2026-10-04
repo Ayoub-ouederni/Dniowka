@@ -63,6 +63,26 @@ pub mod dniowka {
         crate::instructions::end_employment::handle_end_employment(ctx, end_ts)
     }
 
+    /// The employer proposes a reduction of the final pay (sick leave, absence, correction).
+    /// Without the employee's consent it can never cut below the floor.
+    pub fn propose_adjustment(
+        ctx: Context<ProposeAdjustment>,
+        amount: u64,
+        reason: u8,
+    ) -> Result<()> {
+        crate::instructions::propose_adjustment::handle_propose_adjustment(ctx, amount, reason)
+    }
+
+    /// The employee consents to exactly the adjustment they reviewed.
+    pub fn accept_adjustment(ctx: Context<AcceptAdjustment>, amount: u64) -> Result<()> {
+        crate::instructions::accept_adjustment::handle_accept_adjustment(ctx, amount)
+    }
+
+    /// The employer takes back the funding of an invite nobody accepted.
+    pub fn cancel_unaccepted(ctx: Context<CancelUnaccepted>) -> Result<()> {
+        crate::instructions::cancel_unaccepted::handle_cancel_unaccepted(ctx)
+    }
+
     /// Payday: anyone can trigger it; the program pays the employee and refunds the rest.
     pub fn settle(ctx: Context<Settle>) -> Result<()> {
         crate::instructions::settle::handle_settle(ctx)

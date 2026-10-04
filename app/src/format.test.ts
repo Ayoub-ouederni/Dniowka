@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import {
   couponsFilled,
+  fromWarsawInput,
+  toWarsawInput,
   formatCountdown,
   formatDate,
   formatDateTime,
@@ -94,5 +96,35 @@ describe("couponsFilled", () => {
   it("never goes outside 0..30", () => {
     expect(couponsFilled(900_000n, 600_000n)).toBe(30);
     expect(couponsFilled(10n, 0n)).toBe(0);
+  });
+});
+
+describe("Warsaw date-time input", () => {
+  // 2026-12-02 11:05:30 in Warsaw (winter, UTC+1).
+  const winter = Date.UTC(2026, 11, 2, 10, 5, 30) / 1000;
+  // 2026-07-02 00:30:00 in Warsaw (summer, UTC+2).
+  const summer = Date.UTC(2026, 6, 1, 22, 30) / 1000;
+
+  it("shows a moment as the Polish wall time a date-time picker expects", () => {
+    expect(toWarsawInput(winter)).toBe("2026-12-02T11:05:30");
+    expect(toWarsawInput(summer)).toBe("2026-07-02T00:30:00");
+  });
+
+  it("reads a picker value as Polish wall time, with or without seconds", () => {
+    expect(fromWarsawInput("2026-12-02T11:05:30")).toBe(winter);
+    expect(fromWarsawInput("2026-07-02T00:30")).toBe(summer);
+  });
+
+  it("round-trips across the year", () => {
+    for (let month = 0; month < 12; month++) {
+      const ts = Date.UTC(2027, month, 15, 13, 7, 9) / 1000;
+      expect(fromWarsawInput(toWarsawInput(ts))).toBe(ts);
+    }
+  });
+
+  it("rejects what isn't a date-time", () => {
+    expect(fromWarsawInput("")).toBeNull();
+    expect(fromWarsawInput("tomorrow")).toBeNull();
+    expect(fromWarsawInput("2026-13-40T99:99")).toBeNull();
   });
 });

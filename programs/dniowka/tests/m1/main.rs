@@ -7,4 +7,5 @@
 
 mod guards;
 mod harness;
+mod m3;
 mod spec;

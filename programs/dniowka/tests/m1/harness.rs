@@ -444,4 +444,75 @@ impl Env {
         let ix = self.ix_settle(stream, &caller.pubkey(), &employee, &self.boss.pubkey());
         self.send(&[ix], caller, &[])
     }
+
+    pub fn ix_propose(
+        &self,
+        authority: &Pubkey,
+        employer: &Pubkey,
+        stream: &Pubkey,
+        amount: u64,
+        reason: u8,
+    ) -> Instruction {
+        Instruction::new_with_bytes(
+            dniowka::ID,
+            &dniowka::instruction::ProposeAdjustment { amount, reason }.data(),
+            dniowka::accounts::ProposeAdjustment {
+                authority: *authority,
+                employer: *employer,
+                stream: *stream,
+            }
+            .to_account_metas(None),
+        )
+    }
+
+    pub fn propose(&mut self, stream: &Pubkey, amount: u64, reason: u8) -> TxResult {
+        let ix = self.ix_propose(&self.boss.pubkey(), &self.employer, stream, amount, reason);
+        let boss = self.boss.insecure_clone();
+        self.send(&[ix], &boss, &[])
+    }
+
+    pub fn accept_adjustment(
+        &mut self,
+        stream: &Pubkey,
+        signer: &Keypair,
+        amount: u64,
+    ) -> TxResult {
+        let ix = Instruction::new_with_bytes(
+            dniowka::ID,
+            &dniowka::instruction::AcceptAdjustment { amount }.data(),
+            dniowka::accounts::AcceptAdjustment {
+                employee: signer.pubkey(),
+                stream: *stream,
+            }
+            .to_account_metas(None),
+        );
+        self.send(&[ix], signer, &[])
+    }
+
+    pub fn ix_cancel(&self, authority: &Pubkey, employer: &Pubkey, stream: &Pubkey) -> Instruction {
+        let s = self.stream(stream);
+        Instruction::new_with_bytes(
+            dniowka::ID,
+            &dniowka::instruction::CancelUnaccepted {}.data(),
+            dniowka::accounts::CancelUnaccepted {
+                authority: *authority,
+                employer: *employer,
+                stream: *stream,
+                vault: s.vault,
+                mint: s.mint,
+                employer_token: ata(authority, &s.mint),
+                token_program: TOKEN_2022,
+                associated_token_program: associated_token::ID,
+                memo_program: memo::ID,
+                system_program: system_program::ID,
+            }
+            .to_account_metas(None),
+        )
+    }
+
+    pub fn cancel(&mut self, stream: &Pubkey) -> TxResult {
+        let ix = self.ix_cancel(&self.boss.pubkey(), &self.employer, stream);
+        let boss = self.boss.insecure_clone();
+        self.send(&[ix], &boss, &[])
+    }
 }

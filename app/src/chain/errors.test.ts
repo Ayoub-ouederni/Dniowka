@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { classifyFailure, errorName, parseEarnedAvailable, parseProgramError } from "./errors";
+import {
+  classifyFailure,
+  errorName,
+  parseCancelFrom,
+  parseCutCaps,
+  parseEarnedAvailable,
+  parseProgramError,
+} from "./errors";
 
 const PROGRAM = "EhUqkYYSarPPpec8x8dvgMSrKR8CWdCk11UA7iReNaV3";
 
@@ -20,6 +27,15 @@ describe("errorName", () => {
     expect(errorName(6001)).toBe("PaymentLocked");
     expect(errorName(6004)).toBe("TooEarlyForPayday");
     expect(errorName(6021)).toBe("EmployerCannotBeEmployee");
+  });
+
+  it("knows the M3 errors, appended after the M1 ones", () => {
+    expect(errorName(6022)).toBe("InvalidAdjustmentReason");
+    expect(errorName(6023)).toBe("AdjustmentTooLarge");
+    expect(errorName(6024)).toBe("AdjustmentClosed");
+    expect(errorName(6025)).toBe("NoAdjustment");
+    expect(errorName(6026)).toBe("AdjustmentChanged");
+    expect(errorName(6027)).toBe("CancelTooEarly");
   });
 
   it("returns null for codes the program does not define", () => {
@@ -130,5 +146,32 @@ describe("classifyFailure", () => {
   it("keeps anything else as unknown with its message", () => {
     expect(classifyFailure(new Error("boom"))).toEqual({ kind: "unknown", message: "boom" });
     expect(classifyFailure("weird")).toEqual({ kind: "unknown", message: "weird" });
+  });
+});
+
+describe("M3 log lines", () => {
+  const proposeLogs = [
+    `Program ${PROGRAM} invoke [1]`,
+    "Program log: Instruction: ProposeAdjustment",
+    "Program log: cut cap 180000 with consent 520000",
+    "Program log: AnchorError thrown in programs/dniowka/src/instructions/propose_adjustment.rs:44. Error Code: AdjustmentTooLarge. Error Number: 6023. Error Message: Adjustment would cut into pay that was already taken.",
+  ];
+
+  it("reads the adjustment caps propose_adjustment logs", () => {
+    expect(parseCutCaps(proposeLogs)).toEqual({ withoutConsent: 180_000n, withConsent: 520_000n });
+    expect(parseCutCaps(refusedLogs)).toBeNull();
+    expect(parseCutCaps(undefined)).toBeNull();
+  });
+
+  it("reads when a cancelled invite becomes allowed", () => {
+    const logs = [
+      "Program log: Instruction: CancelUnaccepted",
+      "Program log: cancel allowed from 1800259200",
+      "Program log: AnchorError thrown in programs/dniowka/src/instructions/cancel_unaccepted.rs:60. Error Code: CancelTooEarly. Error Number: 6027. Error Message: This invite can't be cancelled yet.",
+    ];
+    expect(parseCancelFrom(logs)).toBe(1_800_259_200);
+    expect(parseCancelFrom(proposeLogs)).toBeNull();
+    const f = classifyFailure({ logs });
+    expect(f).toMatchObject({ kind: "program", name: "CancelTooEarly", cancelFrom: 1_800_259_200 });
   });
 });

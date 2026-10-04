@@ -14,6 +14,38 @@ export type Dniowka = {
   },
   "instructions": [
     {
+      "name": "acceptAdjustment",
+      "docs": [
+        "The employee consents to exactly the adjustment they reviewed."
+      ],
+      "discriminator": [
+        13,
+        224,
+        98,
+        47,
+        168,
+        134,
+        195,
+        128
+      ],
+      "accounts": [
+        {
+          "name": "employee",
+          "signer": true
+        },
+        {
+          "name": "stream",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
       "name": "acceptStream",
       "docs": [
         "The employee joins; from now on only they can withdraw."
@@ -55,6 +87,131 @@ export type Dniowka = {
           }
         }
       ]
+    },
+    {
+      "name": "cancelUnaccepted",
+      "docs": [
+        "The employer takes back the funding of an invite nobody accepted."
+      ],
+      "discriminator": [
+        165,
+        153,
+        32,
+        101,
+        199,
+        134,
+        68,
+        50
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "docs": [
+            "The employer; also pays rent if their refund account does not exist."
+          ],
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "employer"
+          ]
+        },
+        {
+          "name": "employer",
+          "relations": [
+            "stream"
+          ]
+        },
+        {
+          "name": "stream",
+          "writable": true
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "relations": [
+            "stream"
+          ]
+        },
+        {
+          "name": "mint",
+          "relations": [
+            "stream"
+          ]
+        },
+        {
+          "name": "employerToken",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "authority"
+              },
+              {
+                "kind": "account",
+                "path": "tokenProgram"
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "tokenProgram"
+        },
+        {
+          "name": "associatedTokenProgram",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "memoProgram",
+          "address": "MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr"
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
     },
     {
       "name": "createStream",
@@ -351,6 +508,52 @@ export type Dniowka = {
         {
           "name": "defaultFloorBps",
           "type": "u16"
+        }
+      ]
+    },
+    {
+      "name": "proposeAdjustment",
+      "docs": [
+        "The employer proposes a reduction of the final pay (sick leave, absence, correction).",
+        "Without the employee's consent it can never cut below the floor."
+      ],
+      "discriminator": [
+        90,
+        186,
+        188,
+        58,
+        49,
+        89,
+        216,
+        219
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "signer": true,
+          "relations": [
+            "employer"
+          ]
+        },
+        {
+          "name": "employer",
+          "relations": [
+            "stream"
+          ]
+        },
+        {
+          "name": "stream",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        },
+        {
+          "name": "reason",
+          "type": "u8"
         }
       ]
     },
@@ -691,6 +894,32 @@ export type Dniowka = {
   ],
   "events": [
     {
+      "name": "adjustmentAccepted",
+      "discriminator": [
+        96,
+        155,
+        252,
+        39,
+        244,
+        248,
+        154,
+        70
+      ]
+    },
+    {
+      "name": "adjustmentProposed",
+      "discriminator": [
+        179,
+        246,
+        172,
+        117,
+        138,
+        151,
+        81,
+        38
+      ]
+    },
+    {
       "name": "employmentEnded",
       "discriminator": [
         130,
@@ -740,6 +969,19 @@ export type Dniowka = {
         126,
         10,
         140
+      ]
+    },
+    {
+      "name": "streamCancelled",
+      "discriminator": [
+        91,
+        215,
+        29,
+        237,
+        194,
+        6,
+        184,
+        92
       ]
     },
     {
@@ -892,9 +1134,101 @@ export type Dniowka = {
       "code": 6021,
       "name": "employerCannotBeEmployee",
       "msg": "An employer can't be their own employee"
+    },
+    {
+      "code": 6022,
+      "name": "invalidAdjustmentReason",
+      "msg": "Adjustment reason must be 1 (sick leave), 2 (unpaid absence), 3 (correction) or 4 (other)"
+    },
+    {
+      "code": 6023,
+      "name": "adjustmentTooLarge",
+      "msg": "Adjustment would cut into pay that was already taken"
+    },
+    {
+      "code": 6024,
+      "name": "adjustmentClosed",
+      "msg": "Adjustments close at payday"
+    },
+    {
+      "code": 6025,
+      "name": "noAdjustment",
+      "msg": "There is no adjustment to accept"
+    },
+    {
+      "code": 6026,
+      "name": "adjustmentChanged",
+      "msg": "The adjustment changed; review it again"
+    },
+    {
+      "code": 6027,
+      "name": "cancelTooEarly",
+      "msg": "This invite can't be cancelled yet"
     }
   ],
   "types": [
+    {
+      "name": "adjustmentAccepted",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "stream",
+            "type": "pubkey"
+          },
+          {
+            "name": "employee",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "adjustmentProposed",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "stream",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          },
+          {
+            "name": "reason",
+            "type": "u8"
+          },
+          {
+            "name": "capWithoutConsent",
+            "docs": [
+              "Most that applies without the employee's consent (down to the floor)."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "capWithConsent",
+            "docs": [
+              "Most that applies with consent (down to what was already taken)."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    },
     {
       "name": "employer",
       "docs": [
@@ -1154,6 +1488,26 @@ export type Dniowka = {
           {
             "name": "employee",
             "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "streamCancelled",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "stream",
+            "type": "pubkey"
+          },
+          {
+            "name": "refundEmp",
+            "type": "u64"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
           }
         ]
       }

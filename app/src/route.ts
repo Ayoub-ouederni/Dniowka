@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 export type Route =
   | { name: "start" }
   | { name: "employer" }
+  | { name: "screen"; employer: string }
   | { name: "salary"; stream: string; company: string | null; employee: string | null };
 
 export function parseRoute(hash: string): Route {
@@ -10,6 +11,7 @@ export function parseRoute(hash: string): Route {
   const params = new URLSearchParams(query);
   const parts = path.split("/").filter(Boolean);
   if (parts[0] === "employer") return { name: "employer" };
+  if (parts[0] === "screen" && parts[1]) return { name: "screen", employer: parts[1] };
   if (parts[0] === "s" && parts[1]) {
     return {
       name: "salary",

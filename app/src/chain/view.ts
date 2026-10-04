@@ -7,14 +7,16 @@ import {
   type Connection,
   PublicKey,
   SYSVAR_CLOCK_PUBKEY,
+  type TransactionInstruction,
   TransactionMessage,
   VersionedTransaction,
 } from "@solana/web3.js";
 
-import { parseEarnedAvailable } from "./errors";
+import { type CutCaps, parseCutCaps, parseEarnedAvailable } from "./errors";
 import {
   type DniowkaProgram,
   employerPda,
+  proposeAdjustmentIx,
   streamPda,
   withdrawEarnedIx,
   zlAccount,
@@ -46,6 +48,10 @@ export type StreamView = {
   funded: bigint;
   withdrawn: bigint;
   endTs: number | null;
+  /** Proposed payday reduction (0 = none), its reason code and the employee's consent. */
+  adjustment: bigint;
+  adjustmentReason: number;
+  adjustmentAccepted: boolean;
   status: StreamStatus;
 };
 
@@ -80,6 +86,9 @@ function toStream(address: PublicKey, a: any): StreamView {
     funded: big(a.funded),
     withdrawn: big(a.withdrawn),
     endTs: a.endTs === null ? null : num(a.endTs),
+    adjustment: big(a.adjustment),
+    adjustmentReason: a.adjustmentReason,
+    adjustmentAccepted: a.adjustmentAccepted,
     status: Object.keys(a.status)[0] as StreamStatus,
   };
 }
@@ -168,6 +177,30 @@ export async function programEarned(
     stream.mint,
     U64_MAX,
   );
+  return parseEarnedAvailable(await simulatedLogs(program, employerAuthority, ix));
+}
+
+/**
+ * How far a payday adjustment can go, as the program computes it: simulate an impossible
+ * proposal (as the employer, unsigned) and read its `cut cap X with consent Y` log line.
+ * Null when no adjustment can be proposed (not running, or payday has come).
+ */
+export async function programCutCaps(
+  program: DniowkaProgram,
+  stream: StreamView,
+  employerAuthority: PublicKey,
+): Promise<CutCaps | null> {
+  if (stream.status !== "active") return null;
+  const ix = await proposeAdjustmentIx(program, employerAuthority, stream.address, U64_MAX, 4);
+  return parseCutCaps(await simulatedLogs(program, employerAuthority, ix));
+}
+
+/** Logs of a simulated, unsigned transaction; fee payer = the employer's wallet. */
+async function simulatedLogs(
+  program: DniowkaProgram,
+  employerAuthority: PublicKey,
+  ix: TransactionInstruction,
+): Promise<string[] | null> {
   const message = new TransactionMessage({
     payerKey: employerAuthority,
     recentBlockhash: PLACEHOLDER_BLOCKHASH,
@@ -177,7 +210,7 @@ export async function programEarned(
     new VersionedTransaction(message),
     { sigVerify: false, replaceRecentBlockhash: true, commitment: "confirmed" },
   );
-  return parseEarnedAvailable(value.logs);
+  return value.logs;
 }
 
 /** zł balance of a wallet, in grosze (0 if it has no zł account yet). */
