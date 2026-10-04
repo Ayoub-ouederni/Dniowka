@@ -116,11 +116,13 @@ export function Salary({ stream: address, company, employee: employeeName }: Pro
   useEffect(() => {
     if (joinRequested && publicKey && data) void joinRef.current();
   }, [joinRequested, publicKey, data]);
+  // The paid view only appears after the next read: start the flight once it is on screen.
+  const paidOnScreen = data?.stream.status === "settled";
   useEffect(() => {
-    if (!fly) return;
+    if (!fly || !paidOnScreen) return;
     const t = setTimeout(() => setFly(false), FLY_MS);
     return () => clearTimeout(t);
-  }, [fly]);
+  }, [fly, paidOnScreen]);
 
   if (!key || data === null) {
     return (
@@ -362,7 +364,8 @@ export function Salary({ stream: address, company, employee: employeeName }: Pro
   const available = figures?.available ?? null;
   const steps = available !== null ? tearSteps(stream.withdrawn, available, stream.net) : [];
   // Tear mode ends with payday: the take panel is gone, so is the selection.
-  const tearing = isEmployee && !paydayCome && tear.mode !== "idle";
+  // While a result is on screen (sending, "+X", ODMOWA) the selection steps aside; "Back" restores it.
+  const tearing = isEmployee && !paydayCome && tear.mode !== "idle" && takeState === null;
   const selected = tearing ? (tear.amountFor(steps) ?? 0n) : 0n;
 
   const take = async (amount: bigint, mode: "normal" | "tryAnyway") => {
