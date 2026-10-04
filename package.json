@@ -2,7 +2,9 @@
   "name": "dniowka",
   "private": true,
   "scripts": {
-    "smoke": "tsx scripts/smoke-devnet.ts"
+    "smoke": "tsx scripts/smoke-devnet.ts",
+    "seed": "tsx scripts/seed-zl.ts",
+    "sync-idl": "scripts/sync-idl.sh"
   },
   "dependencies": {
     "@anchor-lang/core": "^1.2.0",

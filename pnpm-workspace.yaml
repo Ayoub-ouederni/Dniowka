@@ -1,3 +1,6 @@
+packages:
+  - app
+
 # Native build scripts pnpm must be allowed to run (it refuses unreviewed ones).
 allowBuilds:
   bigint-buffer: true

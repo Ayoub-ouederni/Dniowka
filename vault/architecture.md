@@ -18,7 +18,10 @@ docs               design-rationale.md, screenshots
 
 ## Status
 M1 done 2026-10-04: program on devnet, `EhUqkYYSarPPpec8x8dvgMSrKR8CWdCk11UA7iReNaV3`
-(upgradeable, authority = dev wallet). Next: M2 minimal UI.
+(upgradeable, authority = dev wallet).
+M2 done 2026-10-04: minimal UI in `app/` (employer register / add / secure; employee join /
+take / try anyway; payday by anyone; proof links; Under the hood). No program change.
+Next: M3 (adjustments, end of employment, big screen).
 
 ## M1 decisions (approved plan, 2026-10-04)
 - **Anchor 1.2.0** crates (not 1.1.2: avm would switch the machine to Solana 3.1.10).
@@ -42,6 +45,32 @@ M1 done 2026-10-04: program on devnet, `EhUqkYYSarPPpec8x8dvgMSrKR8CWdCk11UA7iRe
 - **Errors** are append-only: spec names first (6000+), then extras. UI maps codes.
 - **Vault is never closed** (keeps `AlreadySettled` reachable on a second settle).
 
+## M2 decisions (approved plan, 2026-10-04)
+- **React 19 + Vite 8 + TS 6** in `app/` (pnpm workspace). eslint + prettier + vitest.
+- **The UI never computes `available`.** Earned / available come from a simulated
+  `withdraw_earned(u64::MAX)` (no signature, fee payer = employer wallet) and the program's log
+  line `earned X available Y` (`chain/view.ts`). The strip fills from that earned figure.
+  A refusal's numbers come from the failed transaction's own logs (`chain/errors.ts`).
+- **"Now" = cluster Clock sysvar**, interpolated between 4 s polls; never the device clock alone.
+- **Normal actions:** Wallet Adapter `sendTransaction`. **"Try anyway":** `signTransaction`
+  then broadcast with `skipPreflight`, so the program refuses on-chain (failed tx on Explorer).
+- **Wallets:** Wallet Standard only (Phantom / Solflare / MWA). Vendor modal text says
+  "wallet" (known leak, custom picker in M4).
+- **Dev-only burner** (`VITE_DEV_BURNER=1`, dev server only, absent from `vite build`): Wallet
+  Adapter's burner subclassed to keep its key in localStorage, so a funded test account
+  survives reloads. One account per origin (localhost / 127.0.0.1 / LAN IP).
+- **IDL in the app:** `pnpm run sync-idl` copies `target/idl` + `target/types` into
+  `app/src/chain/idl/` (committed). Re-run after every `anchor build`.
+- **Test zł:** `pnpm run seed -- <wallet> [zł]` mints from the clean Token-2022 mint
+  `CaWiQGxgnqhB3gAEuC8r7KHe1N1dTJCa7BJ3oFzjUaKS` (authority = dev wallet). Allowed off-chain
+  faucet; decides nothing about salaries.
+- **Names are off-chain labels:** company / employee names travel in the invite link
+  (`#/s/<stream>?c=…&n=…`) and the employer's localStorage, never on-chain.
+- **Amounts** `2 400,00 zł` with no-break spaces (own formatter); dates `dd.mm.yyyy hh:mm`,
+  Europe/Warsaw. Countdown `6 min 05 s` (never like a clock time).
+- **Phone:** `pnpm -C app dev:https` (self-signed, `@vitejs/plugin-basic-ssl`) because Android
+  MWA needs a secure context; `pnpm -C app dev` (HTTP) for the laptop.
+
 ## Known limitations (README later)
 - A funded open invite can be claimed by whoever accepts first; seed/demo use hinted invites.
 - Until `cancel_unaccepted` (instruction 10, no milestone yet; suggest M3) exists, funding of a
@@ -49,9 +78,16 @@ M1 done 2026-10-04: program on devnet, `EhUqkYYSarPPpec8x8dvgMSrKR8CWdCk11UA7iRe
 - Earned counts from `period_start`, not from acceptance. Moving an end date later after it
   passed pays the gap. Funding closes at payday, so a shortfall can't be cured on-chain after.
 - Vault rent and tokens sent to a vault directly stay there.
+- M2 UI: every actor pays devnet SOL fees (and the employee's zł account rent) until Kora (M5).
+  Devnet airdrops are often rate-limited; fund demo wallets from faucet.solana.com ahead of time.
+- M2 UI: nobody runs payday automatically yet; any visitor can press "Run payday" once it's due.
 - M3: `propose_adjustment` must reset `adjustment_accepted`. M6: the stored commitment is a
   placeholder; bind the leaf to the stream's real `net_amount` before writing the circuit.
 
 ## How to run
 - `source .claude/hooks/env.sh && anchor test` (10 unit + 17 LiteSVM tests).
 - `pnpm install && pnpm run smoke` — real-time devnet run with Explorer links.
+- App: `pnpm -C app dev` (laptop, http://localhost:5173) or `pnpm -C app dev:https` (phone on
+  the LAN). Checks: `pnpm -C app typecheck`, `pnpm -C app test`, `pnpm -C app lint`.
+- Test zł for an employer: `pnpm run seed -- <wallet address> [zł]`.
+- After `anchor build`: `pnpm run sync-idl`.

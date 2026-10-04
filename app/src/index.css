@@ -1,0 +1,448 @@
+/* Plain M2 styles. Palette and fonts from spec §6.2; coupons, stamps and receipts are M4. */
+:root {
+  --cobalt: #1b2cc1;
+  --paper: #fbfbf7;
+  --ink: #111111;
+  --muted: #55554f;
+  --line: #d9d9d0;
+  --yellow: #ffe45c;
+  --red: #c8102e;
+  --mint: #7cf2b0;
+  --display: "Bricolage Grotesque", system-ui, sans-serif;
+  --mono: "DM Mono", ui-monospace, monospace;
+
+  color-scheme: light;
+  font: 16px/1.5 var(--mono);
+  color: var(--ink);
+  background: var(--paper);
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+}
+
+h1,
+h2,
+.brand,
+.big {
+  font-family: var(--display);
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+h1 {
+  font-size: 2rem;
+  margin: 0.5rem 0 1rem;
+}
+
+h2 {
+  font-size: 1.25rem;
+  margin: 2rem 0 0.75rem;
+}
+
+a {
+  color: var(--cobalt);
+}
+
+.top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: var(--cobalt);
+  color: var(--paper);
+}
+
+.brand {
+  color: var(--paper);
+  text-decoration: none;
+  font-size: 1.4rem;
+}
+
+.screen {
+  max-width: 40rem;
+  margin: 0 auto;
+  padding: 1rem 1rem 3rem;
+}
+
+.foot {
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.8rem;
+  padding: 1rem;
+}
+
+.lead {
+  font-size: 1.1rem;
+}
+
+.big {
+  font-size: 2.5rem;
+  margin: 0;
+}
+
+.small,
+small {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.note {
+  border-left: 4px solid var(--yellow);
+  padding: 0.25rem 0.75rem;
+}
+
+.error {
+  color: var(--red);
+  font-weight: 500;
+}
+
+/* Buttons and inputs: touch targets ≥ 44 px (spec §6.4). */
+button,
+a.secondary,
+a.role {
+  min-height: 44px;
+  font: inherit;
+  cursor: pointer;
+}
+
+button.primary,
+button.secondary,
+button.danger,
+a.secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.6rem 1.1rem;
+  border-radius: 6px;
+  border: 2px solid var(--ink);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+button.primary {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+button.secondary,
+a.secondary {
+  background: transparent;
+  color: var(--ink);
+}
+
+button.danger {
+  background: transparent;
+  color: var(--red);
+  border-color: var(--red);
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+button.quiet {
+  background: transparent;
+  border: 1px solid currentColor;
+  color: var(--paper);
+  border-radius: 6px;
+  padding: 0.4rem 0.7rem;
+}
+
+form {
+  display: grid;
+  gap: 0.9rem;
+}
+
+label {
+  display: grid;
+  gap: 0.3rem;
+  font-size: 0.9rem;
+}
+
+input,
+select {
+  min-height: 44px;
+  font: inherit;
+  padding: 0.5rem 0.7rem;
+  border: 2px solid var(--ink);
+  border-radius: 6px;
+  background: #fff;
+  width: 100%;
+}
+
+input.invite {
+  font-size: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+/* Start */
+a.role,
+div.role {
+  display: grid;
+  gap: 0.25rem;
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  color: var(--ink);
+  text-decoration: none;
+  background: #fff;
+}
+
+.role strong {
+  font-family: var(--display);
+  font-size: 1.3rem;
+}
+
+div.role.muted {
+  border-style: dashed;
+  background: transparent;
+}
+
+/* Figures */
+dl.figures {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.35rem 1rem;
+  margin: 0.75rem 0;
+}
+
+dl.figures dt {
+  color: var(--muted);
+}
+
+dl.figures dd {
+  margin: 0;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Amounts never break inside; a pair like "a / b" may break at the slash. */
+dl.figures dd,
+dl.figures dd > span {
+  white-space: nowrap;
+}
+
+dl.figures dd:has(> span) {
+  white-space: normal;
+}
+
+.row dl.figures {
+  font-size: 0.875rem;
+}
+
+dl.figures.hero dd.big {
+  font-size: clamp(1.6rem, 7vw, 2.2rem);
+}
+
+.pill {
+  justify-self: end;
+  align-self: center;
+  background: var(--yellow);
+  padding: 0.1rem 0.6rem;
+  border-radius: 999px;
+  font-weight: 500;
+}
+
+.strong {
+  font-weight: 700;
+}
+
+.balance strong {
+  font-size: 1.2rem;
+}
+
+/* Rows (employer list) */
+ul.rows {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 1rem;
+}
+
+.row {
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  padding: 0.9rem;
+  background: #fff;
+}
+
+.row-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.row-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.status {
+  font-size: 0.8rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--ink);
+}
+
+.status-active {
+  background: var(--yellow);
+}
+
+.status-settled {
+  background: var(--mint);
+}
+
+/* Strip: 30 day squares; fill comes from the program's earned figure. */
+.strip-wrap {
+  margin: 1rem 0;
+}
+
+ol.strip {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 4px;
+}
+
+.coupon {
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  font-size: 0.7rem;
+  color: var(--muted);
+  border: 1px dashed var(--muted);
+  border-radius: 3px;
+  background: linear-gradient(to right, var(--yellow) var(--fill), transparent var(--fill));
+}
+
+.coupon.taken {
+  background: repeating-linear-gradient(-45deg, var(--line) 0 4px, transparent 4px 8px);
+  border-style: solid;
+}
+
+figcaption {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-top: 0.4rem;
+}
+
+/* Outcomes and stamps */
+.outcome {
+  margin: 1rem 0;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  border: 2px solid var(--ink);
+  background: #fff;
+}
+
+.outcome.ok {
+  background: var(--mint);
+}
+
+.outcome.refused {
+  border-color: var(--red);
+}
+
+.outcome .result {
+  font-weight: 500;
+  margin: 0 0 0.25rem;
+}
+
+.proof {
+  font-size: 0.8rem;
+}
+
+.stamp {
+  display: inline-block;
+  font-family: var(--display);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  padding: 0.2rem 0.8rem;
+  border: 4px solid currentColor;
+  border-radius: 6px;
+  transform: rotate(-12deg);
+  margin: 0.5rem 0 0.75rem;
+}
+
+.stamp-refused {
+  color: var(--red);
+  font-size: 1.8rem;
+}
+
+.stamp-paid {
+  color: var(--cobalt);
+  font-size: 2.2rem;
+  margin: 1rem 0 1.5rem 0.75rem;
+}
+
+.stamp-confirming {
+  color: var(--muted);
+  transform: none;
+  border-style: dashed;
+}
+
+.receipt {
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  background: #fff;
+}
+
+.take button.danger {
+  margin-top: -0.25rem;
+}
+
+/* Under the hood */
+details.hood {
+  margin-top: 2.5rem;
+  border-top: 1px solid var(--line);
+  padding-top: 0.75rem;
+  font-size: 0.8rem;
+}
+
+details.hood summary {
+  cursor: pointer;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  font-weight: 500;
+}
+
+details.hood dl {
+  display: grid;
+  gap: 0.2rem;
+}
+
+details.hood dt {
+  color: var(--muted);
+  margin-top: 0.5rem;
+}
+
+details.hood dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+details.hood ul {
+  padding-left: 1rem;
+  margin: 0.25rem 0;
+}
+
+.hood-note {
+  color: var(--muted);
+}

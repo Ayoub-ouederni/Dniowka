@@ -13,3 +13,4 @@ test-ledger/
 **/*.rs.bk
 .yarn
 .surfpool
+.playwright-mcp/
