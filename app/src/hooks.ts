@@ -3,6 +3,7 @@ import type { TransactionInstruction } from "@solana/web3.js";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { makeProgram } from "./chain/program";
+import { pollDelay } from "./poll";
 import { type TxOutcome, sendNormal, sendTryAnyway } from "./chain/send";
 
 export function useProgram() {
@@ -62,22 +63,40 @@ export function usePoll<T>(load: () => Promise<T>, ms: number, deps: unknown[]) 
   useEffect(() => {
     let alive = true;
     let timer: ReturnType<typeof setTimeout>;
+    let failures = 0;
+    let waitingForTab = false;
+    // A hidden tab stops reading; it reads again as soon as it is shown. Every open tab
+    // shares the public devnet's rate limit, so background tabs must not spend it.
     const step = async () => {
+      if (document.hidden) {
+        waitingForTab = true;
+        return;
+      }
       try {
         const value = await loadRef.current();
+        failures = 0;
         if (alive) {
           setData(value);
           setError(null);
         }
       } catch (e) {
+        failures += 1;
         if (alive) setError(e);
       }
-      if (alive) timer = setTimeout(step, ms);
+      if (alive) timer = setTimeout(step, pollDelay(ms, failures));
     };
+    const onVisible = () => {
+      if (!document.hidden && waitingForTab && alive) {
+        waitingForTab = false;
+        step();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisible);
     step();
     return () => {
       alive = false;
       clearTimeout(timer);
+      document.removeEventListener("visibilitychange", onVisible);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- caller-provided deps
   }, [ms, tick, ...deps]);
